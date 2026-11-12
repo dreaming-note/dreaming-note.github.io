@@ -105,6 +105,13 @@ table.t tbody tr:hover{background:#F8FAFD}
 .err{background:var(--shu-soft);color:var(--shu);border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px;font-weight:700}
 .okmsg{background:var(--ok-soft);color:var(--ok);border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px;font-weight:700}
 .demo-box{background:var(--warn-soft);color:#7A4A08;border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px}
+.menu-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
+.menu-chips button{font:inherit;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid #C9D6EA;border-radius:99px;padding:5px 12px;cursor:pointer}
+.menu-chips button:hover{background:#D6E2F2}
+.menu-chips button small{font-weight:400;color:var(--muted);margin-left:3px}
+.menu-add summary{margin:0 0 8px}
+.mrow{display:grid;grid-template-columns:1fr 6em auto;gap:6px;margin-bottom:6px}
+.mrow.ihead span{font-size:12px;font-weight:600;color:var(--muted)}
 .irow{display:grid;grid-template-columns:1.3fr .9fr 1.5fr 36px;gap:6px;align-items:center;margin-bottom:6px}
 .irow.ihead span{font-size:12px;font-weight:600;color:var(--muted)}
 .irow .x{width:36px;height:38px;padding:0;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:16px;cursor:pointer}
@@ -383,6 +390,9 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
 
       <div class="panel">
         <h3>ノート <span class="label-sm">この月に書いたノート</span></h3>
+        <div class="sub" style="margin-top:0">練習メニューごとの練習量 <span class="label-sm">この月の合計（ラベルの練習だけ）</span></div>
+        <div class="tscroll" id="myMenuVol"></div>
+        <div class="sub">書いたノート</div>
         <div class="cards" id="myNotes"></div>
       </div>
     </div>
@@ -424,6 +434,17 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
         <!-- 練習・自主練 -->
         <div data-for="練習 自主練">
           <div class="sub">練習内容</div>
+          <!-- チームで保存した練習メニューのラベル。押すと行が増え、量を入れるだけになります -->
+          <div class="menu-chips" id="n-menus"></div>
+          <details id="n-menuAdd" class="menu-add">
+            <summary>＋ 練習メニューのラベルを作る</summary>
+            <div class="fields" style="margin-top:6px">
+              <label class="f" for="nm-name">練習メニューの名前<input id="nm-name" type="text" list="menuList" placeholder="例：ロングティー"></label>
+              <label class="f" for="nm-unit">量の単位（任意）<input id="nm-unit" type="text" maxlength="6" placeholder="例：本・球・分・km"></label>
+              <button type="button" class="btn small" id="nm-save">ラベルを保存</button>
+            </div>
+            <p class="note" style="margin-top:6px">保存したラベルはチームのみんなで使えます。直したり消したりは、指導者が「設定」で行います。</p>
+          </details>
           <div class="irow ihead"><span>練習内容</span><span>量</span><span>備考</span><span></span></div>
           <div id="n-items"></div>
           <datalist id="menuList"></datalist>
@@ -667,6 +688,10 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <div id="st-staff"></div>
       <button class="btn ghost small" id="st-addStaff" style="margin-top:4px">＋ 指導者を追加</button>
       <p class="note" style="margin-top:8px">部員を消しても、その部員の記録はスプレッドシートに残ります（画面には出なくなります）。</p>
+      <div class="sub">練習メニューのラベル <span class="label-sm">「ノートを書く」でボタンとして出ます</span></div>
+      <div class="mrow ihead"><span>練習メニューの名前</span><span>単位</span><span></span></div>
+      <div id="st-menus"></div>
+      <button class="btn ghost small" id="st-addMenu" style="margin-top:4px">＋ ラベルを追加</button>
       <div class="actions"><span class="spacer"></span><button class="btn" id="st-save">設定を保存</button></div>
     </div>
   </section>
@@ -985,7 +1010,7 @@ function outsTxt(o) {
    ══════════════════════════════════════════ */
 const DEMO = !API_URL;
 /* この画面が必要とするサーバー（Code.gs）の版。Code.gs の VERSION と合わせます */
-const NEED_SERVER = "server v6";
+const NEED_SERVER = "server v7";
 function checkServer(v) {
   const old = !!v && v !== NEED_SERVER;
   $("#srvWarn").hidden = !old;
@@ -1058,6 +1083,8 @@ let BUSY = false;
 /* ログインしている人の役割："team"（部員）・"staff"（指導者）・"orgadmin"（組織の管理者）・"owner"（オーナー） */
 let ROLE = "";
 let TEAM = { id: "", name: "", code: "", orgName: "" };
+/* チームの練習メニューのラベル [{ n: 名前, u: 単位 }] */
+let TEAM_MENUS = [];
 const isStaff = (n) => STAFF.indexOf(n) >= 0;
 const canManage = () => ROLE === "staff" || ROLE === "orgadmin" || ROLE === "owner";
 const ROLE_NAMES = { team: "部員", staff: "指導者", orgadmin: "組織の管理者", owner: "オーナー" };
@@ -1321,6 +1348,20 @@ function renderMy() {
   /* ふり返り */
   const notes = LOGS.filter((l) => l.name === ME && inPer(l.date, ym))
     .sort((a, b) => b.date.localeCompare(a.date));
+
+  /* 練習メニュー（ラベル）ごとの、この月の練習量。量の数字を足し、やった日数も数えます */
+  const vol = TEAM_MENUS.map((m) => {
+    const days = notes.filter((l) => l.items.some((it) => it.w === m.n));
+    const total = days.reduce((a, l) => a + l.items.filter((it) => it.w === m.n).reduce((b, it) => b + qtyNum(it.q), 0), 0);
+    return { m, days: days.length, total: Math.round(total * 10) / 10 };
+  });
+  $("#myMenuVol").innerHTML = !TEAM_MENUS.length
+    ? '<p class="note">練習メニューのラベルはまだありません。「ノートを書く」の「＋ 練習メニューのラベルを作る」から作れます。</p>'
+    : '<table class="t" style="min-width:0"><thead><tr><th class="l">練習メニュー</th><th>練習量</th><th>やった日数</th></tr></thead><tbody>' +
+      vol.map((v) => '<tr><td class="l"><b>' + esc(v.m.n) + "</b></td>" +
+        '<td class="num">' + (v.days ? "<b>" + f1(v.total) + "</b>" + (v.m.u ? " " + esc(v.m.u) : "") : "–") + "</td>" +
+        '<td class="num">' + (v.days ? v.days + "日" : "–") + "</td></tr>").join("") +
+      "</tbody></table>";
   $("#myNotes").innerHTML = notes.length
     ? notes.map((l) => noteCard(l, false, false)).join("")
     : '<div class="empty">この月のノートはまだありません。</div>';
@@ -1359,11 +1400,14 @@ function lastRoles(name) {
 const roleTags = (roles) => roles.map((r) => ' <span class="tag">' + esc(r) + "</span>").join("");
 
 /* 練習内容の入力行 */
+/* 練習メニューのラベルの単位（ラベルにない練習なら空） */
+const unitOf = (name) => { const m = TEAM_MENUS.find((x) => x.n === name); return m ? m.u : ""; };
+const qtyHint = (name) => (unitOf(name) ? "数字だけでOK（" + unitOf(name) + "）" : PROFILE.itemEx[1]);
 function itemRow(it) {
   it = it || {};
   return '<div class="irow">' +
     '<input type="text" class="iw" list="menuList" aria-label="練習内容" placeholder="' + PROFILE.itemEx[0] + '" value="' + esc(it.w || "") + '">' +
-    '<input type="text" class="iq" aria-label="量" placeholder="' + PROFILE.itemEx[1] + '" value="' + esc(it.q || "") + '">' +
+    '<input type="text" class="iq" aria-label="量" placeholder="' + esc(qtyHint(it.w)) + '" value="' + esc(it.q || "") + '">' +
     '<input type="text" class="im" aria-label="備考" placeholder="備考（ねらい・気づいたこと）" value="' + esc(it.m || "") + '">' +
     '<button type="button" class="x" data-ix title="この行を消す" aria-label="この行を消す">×</button></div>';
 }
@@ -1372,10 +1416,49 @@ function setItems(items) {
   $("#n-items").innerHTML = list.map(itemRow).join("");
 }
 function getItems() {
-  return parseItems($$("#n-items .irow").map((r) => ({
-    w: r.querySelector(".iw").value.trim(), q: r.querySelector(".iq").value.trim(), m: r.querySelector(".im").value.trim()
-  })));
+  return parseItems($$("#n-items .irow").map((r) => {
+    const w = r.querySelector(".iw").value.trim();
+    let q = r.querySelector(".iq").value.trim();
+    /* ラベルに単位があって、量が数字だけなら単位を付けます（50 → 50本） */
+    if (unitOf(w) && /^\d+(\.\d+)?$/.test(q.normalize("NFKC"))) q = q.normalize("NFKC") + unitOf(w);
+    return { w, q, m: r.querySelector(".im").value.trim() };
+  }));
 }
+
+/* チームの練習メニューのラベルをボタンにします。入力候補にも入れます */
+function renderMenus() {
+  $("#n-menus").innerHTML = TEAM_MENUS.length
+    ? TEAM_MENUS.map((m, i) => '<button type="button" data-menu="' + i + '">' + esc(m.n) + (m.u ? "<small>" + esc(m.u) + "</small>" : "") + "</button>").join("")
+    : '<span class="note">練習メニューのラベルはまだありません。下の「＋ 練習メニューのラベルを作る」から作れます。</span>';
+  const names = PROFILE.menu.concat(TEAM_MENUS.map((m) => m.n).filter((n) => PROFILE.menu.indexOf(n) < 0));
+  $("#menuList").innerHTML = names.map((m) => '<option value="' + esc(m) + '">').join("");
+}
+/* ラベルを押すと、空いている行（なければ新しい行）に入れて、量の欄に移ります */
+$("#n-menus").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-menu]");
+  if (!b) return;
+  const m = TEAM_MENUS[Number(b.dataset.menu)];
+  if (!m) return;
+  let row = $$("#n-items .irow").find((r) => !r.querySelector(".iw").value.trim());
+  if (!row) { $("#n-items").insertAdjacentHTML("beforeend", itemRow()); row = $("#n-items .irow:last-child"); }
+  row.querySelector(".iw").value = m.n;
+  row.querySelector(".iq").placeholder = qtyHint(m.n);
+  row.querySelector(".iq").focus();
+  NOTE_DIRTY = true;
+});
+/* 練習内容を手で入れたときも、ラベルと同じ名前なら単位を案内します */
+$("#n-items").addEventListener("input", (e) => {
+  if (!e.target.classList.contains("iw")) return;
+  e.target.closest(".irow").querySelector(".iq").placeholder = qtyHint(e.target.value.trim());
+});
+$("#nm-save").addEventListener("click", async () => {
+  const name = $("#nm-name").value.trim(), unit = $("#nm-unit").value.trim();
+  if (!name) { showErr("練習メニューの名前を入れてください"); return; }
+  if (await call("addMenu", { name, unit }, "ラベル「" + name + "」を保存しました")) {
+    $("#nm-name").value = ""; $("#nm-unit").value = "";
+    $("#n-menuAdd").open = false;
+  }
+});
 
 /* 日付を選ぶと、その日のノートがあればフォームに読み込みます */
 function loadNote(date) {
@@ -1401,6 +1484,7 @@ function loadNote(date) {
 
 function renderInput() {
   if (isStaff(ME) || !ME) return;
+  renderMenus();
   $("#inputWho").textContent = ME + " として書きます";
   const ym = $("#histMonth").value || THIS_MONTH;
   const rows = LOGS.filter((l) => l.name === ME && inPer(l.date, ym))
@@ -1818,6 +1902,7 @@ async function call(fn, arg, msg) {
 /* ══════════════════════════════════════════
    競技の切り替え。チームに入るたびに、その競技の項目・表記にします
    ══════════════════════════════════════════ */
+let PROFILE_READY = false;
 function setProfile(sport) {
   const next = profileOf(sport);
   const changed = next !== PROFILE;
@@ -1830,6 +1915,9 @@ function setProfile(sport) {
   NUM_GAME = GOAL_KEYS.slice();
   OUTS_KEYS = items.filter((m) => m.outs).map((m) => m.key);
   if (changed) { STAT_SORT = {}; RES_SORT = { key: "", dir: -1 }; }
+  /* 同じ競技のまま保存し直したときは、書きかけの入力を消さないよう作り直しません */
+  if (!changed && PROFILE_READY) return;
+  PROFILE_READY = true;
 
   /* ノートを書く：ポジションのチェック、試合の成績の欄、練習内容の候補 */
   $("#n-roles").innerHTML = ROLES.map((r) => '<label><input type="checkbox" value="' + esc(r) + '"> ' + esc(r) + "</label>").join("");
@@ -2088,13 +2176,23 @@ async function loadSettings() {
     $("#st-pass").value = ""; $("#st-spass").value = "";
     $("#st-members").innerHTML = s.members.map((n) => nameRow(n, n)).join("");
     $("#st-staff").innerHTML = s.staff.map((n) => nameRow(n, n)).join("");
+    $("#st-menus").innerHTML = (s.menus || []).map(menuRow).join("");
   } catch (e) { showErr(e.message); }
+}
+/* 練習メニューのラベルの行（名前・単位） */
+function menuRow(m) {
+  m = m || {};
+  return '<div class="mrow"><input type="text" class="mn" value="' + esc(m.n || "") + '" placeholder="例：ロングティー" aria-label="練習メニューの名前">' +
+    '<input type="text" class="mu" maxlength="6" value="' + esc(m.u || "") + '" placeholder="本" aria-label="単位">' +
+    '<button type="button" class="btn ghost small" data-nrm title="この行を消す">消す</button></div>';
 }
 const readNames = (sel) => $$(sel + " .nm").map((i) => ({ old: i.dataset.old, name: i.value.trim() })).filter((m) => m.name);
 $("#st-addMember").addEventListener("click", () => { $("#st-members").insertAdjacentHTML("beforeend", nameRow()); $("#st-members .nrow:last-child input").focus(); });
 $("#st-addStaff").addEventListener("click", () => { $("#st-staff").insertAdjacentHTML("beforeend", nameRow()); $("#st-staff .nrow:last-child input").focus(); });
+$("#st-addMenu").addEventListener("click", () => { $("#st-menus").insertAdjacentHTML("beforeend", menuRow()); $("#st-menus .mrow:last-child input").focus(); });
 $("#st-save").addEventListener("click", async () => {
   const members = readNames("#st-members"), staff = readNames("#st-staff");
+  const menus = $$("#st-menus .mrow").map((r) => ({ n: r.querySelector(".mn").value.trim(), u: r.querySelector(".mu").value.trim() })).filter((m) => m.n);
   const removed = MEMBERS.filter((n) => !members.some((m) => m.old === n)).length +
     STAFF.filter((n) => !staff.some((m) => m.old === n)).length;
   if (removed && !confirm("消した部員・指導者は画面に出なくなります（記録は残ります）。保存してよろしいですか？")) return;
@@ -2105,7 +2203,7 @@ $("#st-save").addEventListener("click", async () => {
     const r = await api("saveSettings", {
       name: $("#st-name").value.trim(), code: $("#st-code").value.trim(),
       password: $("#st-pass").value, staffPassword: $("#st-spass").value,
-      members, staff
+      members, staff, menus
     });
     setToken(r.token);
     flash("設定を保存しました");
@@ -2502,7 +2600,7 @@ document.addEventListener("click", async (e) => {
     } catch (err) { showErr(err.message); }
     return;
   }
-  if (t.dataset.nrm !== undefined) { t.closest(".nrow").remove(); return; }
+  if (t.dataset.nrm !== undefined) { t.closest(".nrow,.mrow").remove(); return; }
   if (t.dataset.back !== undefined) { showErr(""); showGate("login"); }
 });
 
@@ -2544,6 +2642,7 @@ function apply(d) {
   /* 試合成績は、区分が「試合」のノートから集計します */
   GAMES = LOGS.filter((l) => l.kind === "試合");
   TARGETS = (d && d.targets) || {};
+  TEAM_MENUS = (d && d.menus) || [];
   $("#teamTxt").textContent = [TEAM.orgName, TEAM.name].filter(Boolean).join(" ");
 }
 /* 指導者の名前は、指導者・組織の管理者・オーナーとしてログインしたときだけ選べます */
