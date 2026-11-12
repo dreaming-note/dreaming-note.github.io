@@ -372,7 +372,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
         <div id="myGoal"></div>
         <p class="note" style="margin-top:8px">
           達成率の色は、月の進み具合に追いついているかで判定しています。月初に赤くなることはありません。
-          被安打・被本塁打・与四死球・自責点は「上限」で、超えると赤になります。
+          <span class="capNote"></span>
         </p>
       </div>
 
@@ -431,9 +431,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
             <button type="button" class="btn ghost small" id="addItem">＋ 行を追加</button>
             <button type="button" class="btn ghost small" id="copyItems">前回の練習内容をコピー</button>
           </div>
-          <p class="note" style="margin-top:6px">
-            「素振り」「ティー」「投球・ブルペン」は量の数字（本・球）、「ランニング」は km の数字が、練習量の集計に入ります。
-          </p>
+          <p class="note" style="margin-top:6px" id="practiceNote"></p>
         </div>
 
         <!-- 試合 -->
@@ -447,7 +445,8 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
             <label class="f" for="n-result">結果
               <select id="n-result"><option value="">—</option><option>勝ち</option><option>負け</option><option>引き分け</option></select></label>
           </div>
-          <div id="n-batBox">
+          <div id="n-bbStats">
+          <div id="n-batBox" data-grp="bat">
           <div class="sub">打撃成績（野手）</div>
           <div class="fields">
             <label class="f" for="n-pa">打席<input id="n-pa" type="number" min="0" placeholder="0"></label>
@@ -459,7 +458,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
           </div>
           <p class="note" style="margin-top:6px">出塁は安打＋四死球の数。長打は二塁打・三塁打の数です（本塁打は「本塁打」に入れます）。</p>
           </div>
-          <div id="n-pitchBox">
+          <div id="n-pitchBox" data-grp="pit">
             <div class="sub">投手成績（投手）</div>
             <div class="fields">
               <label class="f" for="n-ip">投球回<input id="n-ip" type="number" min="0" step="0.1" placeholder="5.2 = 5回2/3"></label>
@@ -471,6 +470,9 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
             </div>
             <p class="note" style="margin-top:6px">投球回は野球の書き方で入れます（5回1/3 → 5.1、5回2/3 → 5.2）。</p>
           </div>
+          </div>
+          <!-- 野球以外の競技の試合の成績（競技に合わせて作ります） -->
+          <div id="n-sportStats"></div>
         </div>
 
         <div class="sub">報告</div>
@@ -506,10 +508,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
         <div class="sub">自分の試合</div>
         <div class="tscroll"><table class="t" id="myGameTable"></table></div>
       </div>
-      <div class="sub">チームの打撃成績 <span class="label-sm">見出しを押すと並べ替えます</span></div>
-      <div class="tscroll"><table class="t" id="batTable"></table></div>
-      <div class="sub">チームの投手成績</div>
-      <div class="tscroll"><table class="t" id="pitTable"></table></div>
+      <div id="statTables"></div>
       <p class="note" style="margin-top:8px" id="calcNote"></p>
     </div>
   </section>
@@ -538,7 +537,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       </h3>
       <div class="tscroll"><table class="t" id="resultTable"></table></div>
       <p class="note" style="margin-top:8px">「実績 / 目標」の形です。色は月の進み具合との比較で、上限の項目は超えると赤になります。率は自動計算です。
-        <span class="rank-note"></span>被安打・被本塁打・与四死球・自責点・防御率・被打率は、少ないほうが上位です。</p>
+        <span class="rank-note"></span><span id="lowNote"></span></p>
     </div>
 
     <div class="panel">
@@ -635,8 +634,8 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       </h3>
       <p class="note" style="margin-bottom:10px">
         部員ごと、月ごとに設定します。空欄は0（目標なし）として扱います。
-        打率・出塁率・長打率、防御率・奪三振率・被打率は、入れた数字から自動で計算します。
-        被安打・被本塁打・与四死球・自責点は「ここまでに抑える」上限として入れてください。
+        <span id="tgtRateNote"></span>
+        <span id="tgtCapNote"></span>
         <b>直した欄だけ</b>が保存されるので、ほかの人が同時に別の部員の目標を変えていても、互いに消し合うことはありません。
       </p>
       <div class="tscroll"><table class="t" id="tgtTable"></table></div>
@@ -682,57 +681,241 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
 const API_URL = "https://script.google.com/macros/s/AKfycbxik6zccxtzXbcB3OQbPej0ZoUCcK2dbEI6tbfdtXPfKP_nKFouTv_pHf4Wz5CmRX3djw/exec";
 
 const KINDS = ["練習", "試合", "自主練"];
-const ROLES = ["野手", "投手", "その他"];
 const CONDS = [
   { v: 5, nm: "絶好調" }, { v: 4, nm: "良い" }, { v: 3, nm: "ふつう" },
   { v: 2, nm: "いまいち" }, { v: 1, nm: "悪い" }
 ];
-/* 目標を立てる指標。cap は「ここまでに抑える」上限の指標 */
-const GROUPS = [
-  {
-    key: "bat", nm: "野手",
-    items: [
-      { key: "pa",  nm: "打席" }, { key: "ob", nm: "出塁" }, { key: "h", nm: "安打" },
-      { key: "xbh", nm: "長打" }, { key: "hr", nm: "本塁打" }, { key: "rbi", nm: "打点" }
-    ],
-    rates: [
-      { key: "avg", nm: "打率", deps: ["pa", "h"], f: (s) => avgOf(s), fmt: (v) => r3(v), hi: true },
-      { key: "obp", nm: "出塁率", deps: ["pa", "ob"], f: (s) => (s.pa > 0 ? s.ob / s.pa : null), fmt: (v) => r3(v), hi: true },
-      { key: "slg", nm: "長打率", deps: ["pa", "h"], f: (s) => slgOf(s), fmt: (v) => r3(v), hi: true }
-    ]
-  },
-  {
-    key: "pit", nm: "投手",
-    items: [
-      { key: "ip", nm: "投球回" }, { key: "ph", nm: "被安打", cap: true }, { key: "phr", nm: "被本塁打", cap: true },
-      { key: "k", nm: "奪三振" }, { key: "pbb", nm: "与四死球", cap: true }, { key: "er", nm: "自責点", cap: true }
-    ],
-    rates: [
-      { key: "era", nm: "防御率", deps: ["ip", "er"], f: (s) => (s.ip > 0 ? (s.er * 27) / s.ip : null), fmt: (v) => f2(v), hi: false },
-      { key: "k9", nm: "奪三振率", deps: ["ip", "k"], f: (s) => (s.ip > 0 ? (s.k * 27) / s.ip : null), fmt: (v) => f2(v), hi: true },
-      { key: "baa", nm: "被打率", deps: ["ip", "ph"], f: (s) => (s.ip + s.ph > 0 ? s.ph / (s.ip + s.ph) : null), fmt: (v) => r3(v), hi: false }
-    ]
-  }
-];
-const GOAL_KEYS = GROUPS.reduce((a, g) => a.concat(g.items.map((m) => m.key)), []);
-const CALC_NOTE = "打数は「打席 −（出塁 − 安打）」、長打率は長打をすべて二塁打として計算した目安です（犠打・犠飛は分けていません）。" +
-  "防御率・奪三振率は9イニングあたり。被打率は「被安打 ÷（アウト数 ＋ 被安打）」の目安です。";
 const VIEW_KEY = "dreaming-view";
-/* 練習内容の入力候補 */
-const MENU_PRESETS = ["キャッチボール", "素振り", "ティー打撃", "トス打撃", "フリー打撃", "バント練習",
-  "ノック", "守備練習", "投球", "ブルペン", "ベースランニング", "ランニング", "ダッシュ",
-  "筋トレ", "体幹トレーニング", "ストレッチ"];
-/* 練習内容から、目標の集計に入れる数字を拾います（含まれる言葉で判定） */
-const ITEM_SUMS = [
-  { key: "swing", words: ["素振り"] },
-  { key: "tee",   words: ["ティー"] },
-  { key: "pitch", words: ["投球", "ブルペン", "ピッチング"] },
-  { key: "run",   words: ["ランニング", "ジョグ", "走"], km: true }
-];
+const pct = (v) => (v == null || !isFinite(v)) ? "–" : (Math.round(v * 1000) / 10).toFixed(1) + "%";
+const ratio = (a, b) => (b > 0 ? a / b : null);
+/* その試合で、そのグループの成績を入れたか（どれか1つでも数字があるか） */
+const anyOf = (keys) => (l) => keys.some((k) => n0(l[k]) > 0);
+
+/* ══════════════════════════════════════════
+   競技ごとの設定
+   ・roles   … 「ノートを書く」のポジションのチェック
+   ・groups  … 試合の成績と目標の項目。roles のどれかにチェックすると、試合の入力欄が出ます
+               items の cap は「ここまでに抑える」上限、outs は投球回のような「5.2＝5回2/3」の書き方
+               rates は自動で計算する率。deps は目標の率を出すのに必要な項目
+   ・vol     … 練習内容の言葉から拾って集計する練習量
+   野球（S01）は、これまでの画面のままです
+   ══════════════════════════════════════════ */
+const BASEBALL = {
+  key: "baseball",
+  roles: ["野手", "投手", "その他"],
+  groups: [
+    {
+      key: "bat", nm: "野手", roles: ["野手"], formTitle: "打撃成績（野手）", title: "チームの打撃成績", who: "選手",
+      nKey: "bgames", nNm: "試合", sortKey: "avg", active: (l) => n0(l.pa) > 0,
+      items: [
+        { key: "pa",  nm: "打席" }, { key: "ob", nm: "出塁" }, { key: "h", nm: "安打" },
+        { key: "xbh", nm: "長打" }, { key: "hr", nm: "本塁打" }, { key: "rbi", nm: "打点" }
+      ],
+      rates: [
+        { key: "avg", nm: "打率", deps: ["pa", "h"], f: (s) => avgOf(s), fmt: (v) => r3(v), hi: true },
+        { key: "obp", nm: "出塁率", deps: ["pa", "ob"], f: (s) => (s.pa > 0 ? s.ob / s.pa : null), fmt: (v) => r3(v), hi: true },
+        { key: "slg", nm: "長打率", deps: ["pa", "h"], f: (s) => slgOf(s), fmt: (v) => r3(v), hi: true }
+      ]
+    },
+    {
+      key: "pit", nm: "投手", roles: ["投手"], formTitle: "投手成績（投手）", title: "チームの投手成績", who: "投手",
+      nKey: "apps", nNm: "登板", sortKey: "ip", active: (l) => ipToOuts(l.ip) > 0,
+      items: [
+        { key: "ip", nm: "投球回", outs: true }, { key: "ph", nm: "被安打", cap: true }, { key: "phr", nm: "被本塁打", cap: true },
+        { key: "k", nm: "奪三振" }, { key: "pbb", nm: "与四死球", cap: true }, { key: "er", nm: "自責点", cap: true }
+      ],
+      rates: [
+        { key: "era", nm: "防御率", deps: ["ip", "er"], f: (s) => (s.ip > 0 ? (s.er * 27) / s.ip : null), fmt: (v) => f2(v), hi: false },
+        { key: "k9", nm: "奪三振率", deps: ["ip", "k"], f: (s) => (s.ip > 0 ? (s.k * 27) / s.ip : null), fmt: (v) => f2(v), hi: true },
+        { key: "baa", nm: "被打率", deps: ["ip", "ph"], f: (s) => (s.ip + s.ph > 0 ? s.ph / (s.ip + s.ph) : null), fmt: (v) => r3(v), hi: false }
+      ]
+    }
+  ],
+  calcNote: "打数は「打席 −（出塁 − 安打）」、長打率は長打をすべて二塁打として計算した目安です（犠打・犠飛は分けていません）。" +
+    "防御率・奪三振率は9イニングあたり。被打率は「被安打 ÷（アウト数 ＋ 被安打）」の目安です。",
+  menu: ["キャッチボール", "素振り", "ティー打撃", "トス打撃", "フリー打撃", "バント練習",
+    "ノック", "守備練習", "投球", "ブルペン", "ベースランニング", "ランニング", "ダッシュ",
+    "筋トレ", "体幹トレーニング", "ストレッチ"],
+  itemEx: ["例：素振り", "例：300本"],
+  /* 練習内容から、練習量の集計に入れる数字を拾います（含まれる言葉で判定） */
+  vol: [
+    { key: "swing", nm: "素振り", unit: "本", words: ["素振り"] },
+    { key: "tee",   nm: "ティー打撃", unit: "球", words: ["ティー"] },
+    { key: "pitch", nm: "投球", unit: "球", words: ["投球", "ブルペン", "ピッチング"] },
+    { key: "run",   nm: "走った距離", unit: "km", words: ["ランニング", "ジョグ", "走"], km: true }
+  ],
+  practiceNote: "「素振り」「ティー」「投球・ブルペン」は量の数字（本・球）、「ランニング」は km の数字が、練習量の集計に入ります。",
+  /* 野球だけの入力チェック */
+  check: (x) =>
+    x("ob") > x("pa") ? "出塁が打席より多くなっています" :
+    x("h") > x("ob") ? "安打が出塁より多くなっています（出塁は安打＋四死球の数です）" :
+    x("xbh") + x("hr") > x("h") ? "長打と本塁打の合計が安打より多くなっています" :
+    x("phr") > x("ph") ? "被本塁打が被安打より多くなっています" :
+    Math.round((x("ip") % 1) * 10) > 2 ? "投球回の小数は .1（1/3）か .2（2/3）で入れてください" : ""
+};
+
+const RUN_VOL = { key: "run", nm: "走った距離", unit: "km", words: ["ランニング", "ジョグ", "走"], km: true };
+/* 卓球・バドミントンの種目ごとの成績（勝ち・負け・取ったゲーム・取られたゲーム） */
+function racketGroup(key, nm, p) {
+  return {
+    key: key, nm: nm, roles: [nm], formTitle: nm + "の成績", title: "チームの" + nm + "成績", who: "選手",
+    nKey: key + "n", nNm: "試合日", sortKey: key + "wr", active: anyOf([p + "w", p + "l", p + "gw", p + "gx"]),
+    items: [
+      { key: p + "w", nm: "勝ち" }, { key: p + "l", nm: "負け", cap: true },
+      { key: p + "gw", nm: "取ったゲーム" }, { key: p + "gx", nm: "取られたゲーム", cap: true }
+    ],
+    rates: [
+      { key: key + "wr", nm: "勝率", deps: [p + "w"], f: (s) => ratio(s[p + "w"], s[p + "w"] + s[p + "l"]), fmt: pct, hi: true },
+      { key: key + "gr", nm: "ゲーム取得率", deps: [p + "gw"], f: (s) => ratio(s[p + "gw"], s[p + "gw"] + s[p + "gx"]), fmt: pct, hi: true }
+    ]
+  };
+}
+const RACKET_NOTE = "勝率＝勝ち÷（勝ち＋負け）、ゲーム取得率＝取ったゲーム÷（取ったゲーム＋取られたゲーム）です。" +
+  "1日に何試合かしたときは、その日の合計を入れてください。";
+
+const SOCCER = {
+  key: "soccer",
+  roles: ["FW", "MF", "DF", "GK"],
+  groups: [
+    {
+      key: "fld", nm: "フィールド", roles: ["FW", "MF", "DF"], formTitle: "成績（フィールド）", title: "チームのフィールド成績", who: "選手",
+      nKey: "fldn", nNm: "出場", sortKey: "goal", active: anyOf(["fplay", "goal", "ast", "sht", "sot"]),
+      items: [
+        { key: "fplay", nm: "出場時間（分）" }, { key: "goal", nm: "ゴール" }, { key: "ast", nm: "アシスト" },
+        { key: "sht", nm: "シュート" }, { key: "sot", nm: "枠内シュート" }
+      ],
+      rates: [
+        { key: "conv", nm: "決定率", deps: ["goal", "sht"], f: (s) => ratio(s.goal, s.sht), fmt: pct, hi: true },
+        { key: "acc", nm: "枠内率", deps: ["sot", "sht"], f: (s) => ratio(s.sot, s.sht), fmt: pct, hi: true },
+        { key: "g90", nm: "90分あたりゴール", deps: ["goal", "fplay"], f: (s) => (s.fplay > 0 ? (s.goal * 90) / s.fplay : null), fmt: (v) => f2(v), hi: true }
+      ]
+    },
+    {
+      key: "gk", nm: "GK", roles: ["GK"], formTitle: "成績（GK）", title: "チームのGK成績", who: "GK",
+      nKey: "gkn", nNm: "出場", sortKey: "svr", active: anyOf(["gplay", "gac", "sav"]),
+      items: [{ key: "gplay", nm: "出場時間（分）" }, { key: "gac", nm: "失点", cap: true }, { key: "sav", nm: "セーブ" }],
+      rates: [
+        { key: "svr", nm: "セーブ率", deps: ["sav", "gac"], f: (s) => ratio(s.sav, s.sav + s.gac), fmt: pct, hi: true },
+        { key: "ga90", nm: "90分あたり失点", deps: ["gac", "gplay"], f: (s) => (s.gplay > 0 ? (s.gac * 90) / s.gplay : null), fmt: (v) => f2(v), hi: false }
+      ]
+    }
+  ],
+  calcNote: "決定率＝ゴール÷シュート、枠内率＝枠内シュート÷シュート、セーブ率＝セーブ÷（セーブ＋失点）。90分あたりは出場時間から計算します。",
+  menu: ["ウォーミングアップ", "パス練習", "ドリブル", "シュート練習", "リフティング", "対人", "ミニゲーム", "紅白戦",
+    "セットプレー", "GK練習", "ランニング", "ダッシュ", "筋トレ", "体幹トレーニング", "ストレッチ"],
+  itemEx: ["例：シュート練習", "例：50本"],
+  vol: [
+    { key: "shoot", nm: "シュート", unit: "本", words: ["シュート"] },
+    { key: "lift", nm: "リフティング", unit: "回", words: ["リフティング"] },
+    RUN_VOL
+  ],
+  check: (x) => x("sot") > x("sht") ? "枠内シュートがシュートより多くなっています" :
+    x("goal") > x("sht") ? "ゴールがシュートより多くなっています" : ""
+};
+
+const BASKETBALL = {
+  key: "basketball",
+  roles: ["ガード", "フォワード", "センター"],
+  groups: [
+    {
+      key: "bk", nm: "個人成績", roles: ["ガード", "フォワード", "センター"], formTitle: "個人成績", title: "チームの個人成績", who: "選手",
+      nKey: "bkn", nNm: "出場", sortKey: "ppg", active: anyOf(["bplay", "pts", "fgm", "fga", "ftm", "fta", "reb", "bast", "stl", "blk", "tov"]),
+      items: [
+        { key: "bplay", nm: "出場時間（分）" }, { key: "pts", nm: "得点" },
+        { key: "fgm", nm: "FG成功" }, { key: "fga", nm: "FG試投" }, { key: "tpm", nm: "3P成功" }, { key: "tpa", nm: "3P試投" },
+        { key: "ftm", nm: "FT成功" }, { key: "fta", nm: "FT試投" },
+        { key: "reb", nm: "リバウンド" }, { key: "bast", nm: "アシスト" }, { key: "stl", nm: "スティール" }, { key: "blk", nm: "ブロック" },
+        { key: "tov", nm: "ターンオーバー", cap: true }
+      ],
+      rates: [
+        { key: "fgp", nm: "FG%", deps: ["fgm", "fga"], f: (s) => ratio(s.fgm, s.fga), fmt: pct, hi: true },
+        { key: "tpp", nm: "3P%", deps: ["tpm", "tpa"], f: (s) => ratio(s.tpm, s.tpa), fmt: pct, hi: true },
+        { key: "ftp", nm: "FT%", deps: ["ftm", "fta"], f: (s) => ratio(s.ftm, s.fta), fmt: pct, hi: true },
+        { key: "ppg", nm: "平均得点", deps: ["pts", "bkn"], f: (s) => ratio(s.pts, s.bkn), fmt: (v) => f1(v), hi: true }
+      ]
+    }
+  ],
+  calcNote: "FG%・3P%・FT%は成功÷試投です（3Pの数はFGにも含めて入れてください）。平均得点は、得点÷出場した試合の数です。",
+  menu: ["ハンドリング", "ドリブル", "パス練習", "シュート練習", "フリースロー", "レイアップ", "1対1", "3対3", "5対5",
+    "フットワーク", "ディフェンス練習", "ランニング", "ダッシュ", "筋トレ", "ストレッチ"],
+  itemEx: ["例：シュート練習", "例：200本"],
+  vol: [
+    { key: "shoot", nm: "シュート", unit: "本", words: ["シュート"] },
+    { key: "fthrow", nm: "フリースロー", unit: "本", words: ["フリースロー"] },
+    RUN_VOL
+  ],
+  check: (x) => x("fgm") > x("fga") ? "FG成功がFG試投より多くなっています" :
+    x("tpm") > x("tpa") ? "3P成功が3P試投より多くなっています" :
+    x("ftm") > x("fta") ? "FT成功がFT試投より多くなっています" :
+    x("tpm") > x("fgm") ? "3P成功がFG成功より多くなっています（3PはFGにも含めます）" : ""
+};
+
+const TABLE_TENNIS = {
+  key: "tabletennis",
+  roles: ["シングルス", "ダブルス"],
+  groups: [racketGroup("sgl", "シングルス", "s"), racketGroup("dbl", "ダブルス", "d")],
+  calcNote: RACKET_NOTE,
+  menu: ["素振り", "多球練習", "フォア打ち", "バック打ち", "ツッツキ", "サーブ練習", "レシーブ練習", "フットワーク",
+    "ゲーム練習", "ランニング", "筋トレ", "ストレッチ"],
+  itemEx: ["例：多球練習", "例：300球"],
+  vol: [
+    { key: "multi", nm: "多球練習", unit: "球", words: ["多球"] },
+    { key: "foot", nm: "フットワーク", unit: "分", words: ["フットワーク"] },
+    RUN_VOL
+  ]
+};
+
+const BADMINTON = {
+  key: "badminton",
+  roles: ["シングルス", "ダブルス", "ミックス"],
+  groups: [racketGroup("sgl", "シングルス", "s"), racketGroup("dbl", "ダブルス", "d"), racketGroup("mix", "ミックス", "x")],
+  calcNote: RACKET_NOTE,
+  menu: ["基礎打ち", "ノック", "クリア", "スマッシュ", "ドロップ", "ヘアピン", "サーブ練習", "フットワーク",
+    "ゲーム練習", "ランニング", "筋トレ", "ストレッチ"],
+  itemEx: ["例：ノック", "例：100本"],
+  vol: [
+    { key: "knock", nm: "ノック", unit: "本", words: ["ノック"] },
+    { key: "foot", nm: "フットワーク", unit: "分", words: ["フットワーク"] },
+    RUN_VOL
+  ]
+};
+
+/* あとから追加した競技は、勝ち負けと得点・失点で記録します */
+const GENERIC = {
+  key: "generic",
+  roles: ["選手", "その他"],
+  groups: [
+    {
+      key: "gen", nm: "成績", roles: ["選手", "その他"], formTitle: "試合の成績", title: "チームの成績", who: "選手",
+      nKey: "genn", nNm: "試合", sortKey: "gwr", active: anyOf(["gw", "gl", "gd", "gpf", "gpa"]),
+      items: [
+        { key: "gw", nm: "勝ち" }, { key: "gl", nm: "負け", cap: true }, { key: "gd", nm: "引き分け" },
+        { key: "gpf", nm: "得点" }, { key: "gpa", nm: "失点", cap: true }
+      ],
+      rates: [{ key: "gwr", nm: "勝率", deps: ["gw"], f: (s) => ratio(s.gw, s.gw + s.gl), fmt: pct, hi: true }]
+    }
+  ],
+  calcNote: "勝率＝勝ち÷（勝ち＋負け）です。引き分けは勝率に入れません。",
+  menu: ["ウォーミングアップ", "基礎練習", "ゲーム練習", "ランニング", "ダッシュ", "筋トレ", "体幹トレーニング", "ストレッチ"],
+  itemEx: ["例：基礎練習", "例：30分"],
+  vol: [RUN_VOL]
+};
+
+/* 競技コード → 設定。競技が決まっていない前の版のチームは野球として扱います */
+const PROFILES = { S01: BASEBALL, S02: SOCCER, S03: BASKETBALL, S04: TABLE_TENNIS, S05: BADMINTON };
+const profileOf = (sport) => (!sport ? BASEBALL : PROFILES[String(sport).toUpperCase()] || GENERIC);
+
+/* いま見ているチームの競技の設定。チームに入るたびに setProfile で切り替えます */
+let PROFILE = BASEBALL;
+let ROLES = BASEBALL.roles;
+let GROUPS = BASEBALL.groups;
+let GOAL_KEYS = [];
+let NUM_GAME = [];
+let ITEM_SUMS = BASEBALL.vol;
+let OUTS_KEYS = [];
+const isBaseball = () => PROFILE === BASEBALL;
 const NUM_LOG = ["swing", "tee", "pitch", "run"];
 const BAT_KEYS = ["pa", "ob", "h", "xbh", "hr", "rbi"];
-const PIT_KEYS = ["ip", "ph", "phr", "k", "pbb", "er"];
-const NUM_GAME = BAT_KEYS.concat(PIT_KEYS);
 const TEXT_GAME = ["opponent", "gtype", "score", "result"];
 const WHO_KEY = "dreaming-who";
 const TAB_KEY = "dreaming-tab";
@@ -802,7 +985,7 @@ function outsTxt(o) {
    ══════════════════════════════════════════ */
 const DEMO = !API_URL;
 /* この画面が必要とするサーバー（Code.gs）の版。Code.gs の VERSION と合わせます */
-const NEED_SERVER = "server v5";
+const NEED_SERVER = "server v6";
 function checkServer(v) {
   const old = !!v && v !== NEED_SERVER;
   $("#srvWarn").hidden = !old;
@@ -907,29 +1090,28 @@ function totals(name, per, from, to) {
   const games = pick(GAMES, name, per, from, to);
   const sum = (arr, k) => arr.reduce((a, x) => a + n0(x[k]), 0);
   const avg = (arr, k) => { const v = arr.filter((x) => n0(x[k]) > 0); return v.length ? sum(v, k) / v.length : null; };
-  return {
+  const o = {
     notes: logs.length,
     days: logs.length,
-    swing: sum(logs, "swing"), tee: sum(logs, "tee"), pitch: sum(logs, "pitch"),
-    run: Math.round(sum(logs, "run") * 10) / 10,
     mins: sum(logs, "mins"),
     cond: avg(logs, "cond"), sleep: avg(logs, "sleep"),
     last: logs.reduce((a, l) => (l.date > a ? l.date : a), ""),
-    games: games.length,
-    bgames: games.filter((g) => n0(g.pa) > 0).length,
-    apps: games.filter((g) => ipToOuts(g.ip) > 0).length,
-    /* 投球回はアウト数で持ちます */
-    ip: games.reduce((a, g) => a + ipToOuts(g.ip), 0),
-    pa: sum(games, "pa"), ob: sum(games, "ob"), h: sum(games, "h"), xbh: sum(games, "xbh"),
-    hr: sum(games, "hr"), rbi: sum(games, "rbi"),
-    ph: sum(games, "ph"), phr: sum(games, "phr"), k: sum(games, "k"), pbb: sum(games, "pbb"), er: sum(games, "er")
+    games: games.length
   };
+  /* 練習量（野球は素振り・ティー・投球・走った距離。ほかの競技はその競技の項目） */
+  ITEM_SUMS.forEach((v) => (o[v.key] = v.km ? Math.round(sum(logs, v.key) * 10) / 10 : sum(logs, v.key)));
+  /* 試合の成績。グループごとに「出た試合の数」も数えます。投球回はアウト数で持ちます */
+  GROUPS.forEach((g) => {
+    o[g.nKey] = games.filter(g.active).length;
+    g.items.forEach((m) => (o[m.key] = m.outs ? games.reduce((a, x) => a + ipToOuts(x[m.key]), 0) : sum(games, m.key)));
+  });
+  return o;
 }
 /* 目標。投球回は「5.2」のような書き方で入れ、アウト数に直して持ちます */
 function targetOf(name, ym) {
   const t = (TARGETS[ym] || {})[name] || {};
   const o = {};
-  GOAL_KEYS.forEach((k) => (o[k] = k === "ip" ? ipToOuts(t[k]) : n0(t[k])));
+  GOAL_KEYS.forEach((k) => (o[k] = OUTS_KEYS.indexOf(k) >= 0 ? ipToOuts(t[k]) : n0(t[k])));
   return o;
 }
 function teamTarget(ym) {
@@ -937,7 +1119,7 @@ function teamTarget(ym) {
   GOAL_KEYS.forEach((k) => (o[k] = MEMBERS.reduce((a, n) => a + targetOf(n, ym)[k], 0)));
   return o;
 }
-const fmtVal = (m, v) => (m.key === "ip" ? outsTxt(v) : f1(v));
+const fmtVal = (m, v) => (m.outs ? outsTxt(v) : f1(v));
 /* 色。上限の指標は超えたら赤、それ以外は月の進み具合と比べます */
 function goalClass(m, cur, tgt, q) {
   if (!tgt) return "";
@@ -951,13 +1133,16 @@ function rateClass(r, cur, tgt) {
   return (r.hi ? cur >= tgt : cur <= tgt) ? "cell-ok" : "cell-bad";
 }
 
-/* 表示する指標のグループ（野手・投手）。チーム・目標設定・マイノートで共通 */
-let VIEW = { bat: true, pit: true };
-try { const v = JSON.parse(localStorage.getItem(VIEW_KEY)); if (v && (v.bat || v.pit)) VIEW = { bat: !!v.bat, pit: !!v.pit }; } catch (e) {}
-const viewGroups = () => GROUPS.filter((g) => VIEW[g.key]);
+/* 表示する指標のグループ（野球なら野手・投手）。チーム・目標設定・マイノートで共通。外したものだけ覚えます */
+let VIEW = {};
+try { const v = JSON.parse(localStorage.getItem(VIEW_KEY)); if (v && typeof v === "object") VIEW = v; } catch (e) {}
+const viewGroups = () => { const g = GROUPS.filter((x) => VIEW[x.key] !== false); return g.length ? g : GROUPS; };
 function renderVsel() {
   $$(".vsel").forEach((el) => {
-    el.innerHTML = GROUPS.map((g) => '<label><input type="checkbox" data-view="' + g.key + '"' + (VIEW[g.key] ? " checked" : "") + "> " + g.nm + "</label>").join("");
+    const shown = viewGroups();
+    /* グループが1つだけの競技では、切り替えは出しません */
+    el.innerHTML = GROUPS.length < 2 ? "" : GROUPS.map((g) => '<label><input type="checkbox" data-view="' + g.key + '"' +
+      (shown.indexOf(g) >= 0 ? " checked" : "") + "> " + g.nm + "</label>").join("");
   });
 }
 
@@ -1017,6 +1202,13 @@ function workLine(l) {
     if (outs) {
       parts.push(outsTxt(outs) + "回 被安打" + n0(l.ph) + (n0(l.phr) ? " 被本塁打" + n0(l.phr) : "") +
         " 奪三振" + n0(l.k) + " 与四死球" + n0(l.pbb) + " 自責" + n0(l.er));
+    }
+    /* 野球以外は、入れた項目をそのまま並べます（例：ゴール2 アシスト1） */
+    if (!isBaseball()) {
+      GROUPS.filter((g) => g.active(l)).forEach((g) => {
+        parts.push((GROUPS.length > 1 ? g.nm + " " : "") +
+          g.items.filter((m) => n0(l[m.key]) > 0).map((m) => m.nm.replace(/（.*）/, "") + n0(l[m.key])).join(" "));
+      });
     }
     return parts.join("・");
   }
@@ -1096,9 +1288,8 @@ function renderMy() {
   $("#paceTxt").textContent = "月の進み " + Math.round(q * 100) + "%";
 
   const unit = (u) => '<span class="note" style="display:inline"> ' + u + "</span>";
-  $("#myWork").innerHTML =
-    tile("素振り", f1(cur.swing) + unit("本")) + tile("ティー打撃", f1(cur.tee) + unit("球")) +
-    tile("投球", f1(cur.pitch) + unit("球")) + tile("走った距離", f1(cur.run) + unit("km")) +
+  /* 練習量のタイル（野球は 素振り・ティー打撃・投球・走った距離） */
+  $("#myWork").innerHTML = ITEM_SUMS.map((v) => tile(v.nm, f1(cur[v.key]) + unit(v.unit))).join("") +
     tile("練習時間", cur.mins ? minsTxt(cur.mins) : "–", "この月の合計");
 
   $("#myBody").innerHTML =
@@ -1114,12 +1305,17 @@ function renderMy() {
   const g = totals(ME, yr);
   $("#myYear").textContent = yr;
   const rt = (gk, rk) => { const r = GROUPS.find((x) => x.key === gk).rates.find((x) => x.key === rk); return r.fmt(r.f(g)); };
+  /* 野球はこれまでどおり。ほかの競技は、出た試合のあるグループの率と項目を並べます */
+  const others = () => GROUPS.filter((x) => g[x.nKey] > 0).map((x) =>
+    x.rates.map((r) => tile(r.nm, r.fmt(r.f(g)), GROUPS.length > 1 ? x.nm : "")).join("") +
+    x.items.filter((m) => !m.cap || g[m.key] > 0).map((m) => tile(m.nm.replace(/（.*）/, ""), fmtVal(m, g[m.key]), GROUPS.length > 1 ? x.nm : "")).join("")).join("");
   $("#myGames").innerHTML = g.games
-    ? tile("試合", g.games) +
-      (g.pa ? tile("打率", rt("bat", "avg"), g.pa + "打席 " + g.h + "安打") + tile("出塁率", rt("bat", "obp")) +
-        tile("長打率", rt("bat", "slg")) + tile("本塁打", g.hr) + tile("打点", g.rbi) : "") +
-      (g.ip ? tile("投球回", outsTxt(g.ip), g.apps + "試合に登板") + tile("防御率", rt("pit", "era")) +
-        tile("奪三振率", rt("pit", "k9")) + tile("被打率", rt("pit", "baa")) : "")
+    ? tile("試合", g.games) + (isBaseball()
+      ? (g.pa ? tile("打率", rt("bat", "avg"), g.pa + "打席 " + g.h + "安打") + tile("出塁率", rt("bat", "obp")) +
+          tile("長打率", rt("bat", "slg")) + tile("本塁打", g.hr) + tile("打点", g.rbi) : "") +
+        (g.ip ? tile("投球回", outsTxt(g.ip), g.apps + "試合に登板") + tile("防御率", rt("pit", "era")) +
+          tile("奪三振率", rt("pit", "k9")) + tile("被打率", rt("pit", "baa")) : "")
+      : others())
     : '<div class="empty">この年の試合成績はまだありません。「ノートを書く」で区分を試合にして入力できます。</div>';
 
   /* ふり返り */
@@ -1149,8 +1345,11 @@ function getRoles() { return $$("#n-roles input:checked").map((c) => c.value); }
 function setRoles(list) { $$("#n-roles input").forEach((c) => (c.checked = (list || []).indexOf(c.value) >= 0)); applyRoles(); }
 function applyRoles() {
   const r = getRoles();
-  $("#n-batBox").hidden = r.indexOf("野手") < 0;
-  $("#n-pitchBox").hidden = r.indexOf("投手") < 0;
+  /* 試合の入力欄（data-grp）は、そのグループのポジションにチェックしたときだけ出します */
+  $$("#noteForm [data-grp]").forEach((box) => {
+    const g = GROUPS.find((x) => x.key === box.dataset.grp);
+    box.hidden = !g || !g.roles.some((x) => r.indexOf(x) >= 0);
+  });
 }
 /* 新しく書くときは、前回のノートのチェックを引き継ぎます */
 function lastRoles(name) {
@@ -1163,8 +1362,8 @@ const roleTags = (roles) => roles.map((r) => ' <span class="tag">' + esc(r) + "<
 function itemRow(it) {
   it = it || {};
   return '<div class="irow">' +
-    '<input type="text" class="iw" list="menuList" aria-label="練習内容" placeholder="例：素振り" value="' + esc(it.w || "") + '">' +
-    '<input type="text" class="iq" aria-label="量" placeholder="例：300本" value="' + esc(it.q || "") + '">' +
+    '<input type="text" class="iw" list="menuList" aria-label="練習内容" placeholder="' + PROFILE.itemEx[0] + '" value="' + esc(it.w || "") + '">' +
+    '<input type="text" class="iq" aria-label="量" placeholder="' + PROFILE.itemEx[1] + '" value="' + esc(it.q || "") + '">' +
     '<input type="text" class="im" aria-label="備考" placeholder="備考（ねらい・気づいたこと）" value="' + esc(it.m || "") + '">' +
     '<button type="button" class="x" data-ix title="この行を消す" aria-label="この行を消す">×</button></div>';
 }
@@ -1223,8 +1422,6 @@ function renderInput() {
 /* ══════════════════════════════════════════
    試合成績
    ══════════════════════════════════════════ */
-let BAT_SORT = { key: "avg", dir: -1 };
-let PIT_SORT = { key: "ip", dir: -1 };
 
 function renderPerOptions() {
   const sel = $("#gPer");
@@ -1239,30 +1436,34 @@ function renderGames() {
   const per = $("#gPer").value;
   if (ME && !isStaff(ME)) {
     const mine = GAMES.filter((g) => g.name === ME && inPer(g.date, per)).sort((a, b) => b.date.localeCompare(a.date));
-    const B = GROUPS[0].items, P = GROUPS[1].items;
+    const cols = GROUPS.reduce((a, x) => a.concat(x.items.map((m) => ({ g: x, m }))), []);
     let h = '<thead><tr><th class="l">試合日</th><th class="l">相手</th><th class="l">結果</th>' +
-      B.concat(P).map((m) => "<th>" + m.nm + "</th>").join("") + "<th></th></tr></thead><tbody>";
-    if (!mine.length) h += '<tr><td class="l" colspan="16"><span class="note">この期間の試合はありません。</span></td></tr>';
+      cols.map((c) => "<th>" + c.m.nm + "</th>").join("") + "<th></th></tr></thead><tbody>";
+    if (!mine.length) h += '<tr><td class="l" colspan="' + (cols.length + 4) + '"><span class="note">この期間の試合はありません。</span></td></tr>';
     mine.forEach((g) => {
-      const outs = ipToOuts(g.ip);
+      /* そのグループの成績を入れていない試合は「–」にします */
       h += '<tr><td class="l">' + md(g.date) + "（" + dowOf(g.date) + "）</td>" +
         '<td class="l">' + esc(g.opponent || "—") + ' <span class="tag' + (g.gtype === "公式戦" ? " blue" : "") + '">' + esc(g.gtype || "") + "</span></td>" +
         '<td class="l">' + esc([g.score, g.result].filter(Boolean).join(" ") || "—") + "</td>" +
-        B.map((m) => '<td class="num">' + (n0(g.pa) ? n0(g[m.key]) : "–") + "</td>").join("") +
-        P.map((m) => '<td class="num">' + (outs ? (m.key === "ip" ? outsTxt(outs) : n0(g[m.key])) : "–") + "</td>").join("") +
+        cols.map((c) => '<td class="num">' + (c.g.active(g) ? (c.m.outs ? outsTxt(ipToOuts(g[c.m.key])) : n0(g[c.m.key])) : "–") + "</td>").join("") +
         '<td><button class="btn ghost small" data-lopen="' + esc(g.date) + '">ノートを開く</button></td></tr>';
     });
     $("#myGameTable").innerHTML = h + "</tbody>";
   }
 
-  $("#batTable").innerHTML = statTable(GROUPS[0], per, "bgames", "試合", BAT_SORT, "bsort", (c) => c.pa > 0);
-  $("#pitTable").innerHTML = statTable(GROUPS[1], per, "apps", "登板", PIT_SORT, "psort", (c) => c.ip > 0);
-  $("#calcNote").textContent = CALC_NOTE;
+  /* チームの成績表は、グループ（野球なら打撃・投手）ごとに1つずつ */
+  $("#statTables").innerHTML = GROUPS.map((g, i) =>
+    '<div class="sub">' + g.title + (i === 0 ? ' <span class="label-sm">見出しを押すと並べ替えます</span>' : "") + "</div>" +
+    '<div class="tscroll"><table class="t">' + statTable(g, per) + "</table></div>").join("");
+  $("#calcNote").textContent = PROFILE.calcNote;
 }
 
 /* チームの成績表。積み上げの項目と自動計算の率を並べ、見出しで並べ替えます */
-function statTable(grp, per, nKey, nNm, sort, attr, has) {
-  const rows = MEMBERS.map((n) => ({ name: n, c: totals(n, per) })).filter((r) => has(r.c));
+let STAT_SORT = {};
+function statTable(grp, per) {
+  const nKey = grp.nKey, nNm = grp.nNm;
+  const sort = STAT_SORT[grp.key] || { key: grp.sortKey, dir: -1 };
+  const rows = MEMBERS.map((n) => ({ name: n, c: totals(n, per) })).filter((r) => r.c[nKey] > 0);
   const val = (r, k) => {
     const rate = grp.rates.find((x) => x.key === k);
     if (!rate) return r.c[k];
@@ -1271,8 +1472,8 @@ function statTable(grp, per, nKey, nNm, sort, attr, has) {
   };
   rows.sort((a, b) => (val(a, sort.key) - val(b, sort.key)) * sort.dir || a.name.localeCompare(b.name));
   const cols = [{ key: nKey, nm: nNm }].concat(grp.items, grp.rates);
-  let h = '<thead><tr><th class="l">' + (grp.key === "bat" ? "選手" : "投手") + "</th>" +
-    cols.map((c) => "<th data-" + attr + '="' + c.key + '" style="cursor:pointer">' + c.nm +
+  let h = '<thead><tr><th class="l">' + grp.who + "</th>" +
+    cols.map((c) => '<th data-gsort="' + grp.key + "|" + c.key + '" style="cursor:pointer">' + c.nm +
       (sort.key === c.key ? (sort.dir > 0 ? " ▲" : " ▼") : "") + "</th>").join("") + "</tr></thead><tbody>";
   if (!rows.length) h += '<tr><td class="l" colspan="' + (cols.length + 1) + '"><span class="note">この期間の' + grp.nm + "の成績はまだありません。</span></td></tr>";
   rows.forEach((r) => {
@@ -1317,7 +1518,7 @@ function resultTable(ym, q) {
   /* 順位。打撃は打席に立った人、投手は投げた人の中で比べます。多いほど良い項目は0の人を除きます */
   const rk = {};
   GROUPS.forEach((g) => {
-    const elig = (r) => (g.key === "bat" ? r.c.pa > 0 : r.c.ip > 0);
+    const elig = (r) => r.c[g.nKey] > 0;
     g.items.forEach((m) => {
       rk[m.key] = ranks(rows.map((r) => (!elig(r) || (!m.cap && !(r.c[m.key] > 0)) ? null : r.c[m.key])), !!m.cap);
     });
@@ -1418,7 +1619,10 @@ function renderTeam() {
 
   /* 週別 */
   const weeks = Array.from(new Set(pick(LOGS, "", ym).map((l) => monOf(l.date)))).sort();
-  const wcols = [["notes", "記入数"], ["days", "練習した人日"], ["swing", "素振り"], ["tee", "ティー"], ["pitch", "投球数"], ["run", "走km"]];
+  /* 野球は 素振り・ティー・投球数・走km。ほかの競技はその競技の練習量 */
+  const wcols = [["notes", "記入数"], ["days", "練習した人日"]].concat(isBaseball()
+    ? [["swing", "素振り"], ["tee", "ティー"], ["pitch", "投球数"], ["run", "走km"]]
+    : ITEM_SUMS.map((v) => [v.key, v.km ? "走km" : v.nm]));
   let wh = '<thead><tr><th class="l">週</th>' + wcols.map((c) => "<th>" + c[1] + "</th>").join("") + "<th>平均体調</th></tr></thead><tbody>";
   if (!weeks.length) wh += '<tr><td class="l" colspan="8"><span class="note">この月のノートはまだありません。</span></td></tr>';
   weeks.forEach((w) => {
@@ -1561,7 +1765,7 @@ function renderTargets() {
       gs.map((g) => g.items.map((m) => {
         const k = n + "|" + m.key;
         const v = TGT_DIRTY[k] !== undefined ? TGT_DIRTY[k] : n0(t[m.key]);
-        return '<td><input type="number" min="0" step="' + (m.key === "ip" ? "0.1" : "1") + '" style="width:5.5em;text-align:right" data-tg="' +
+        return '<td><input type="number" min="0" step="' + (m.outs ? "0.1" : "1") + '" style="width:5.5em;text-align:right" data-tg="' +
           esc(k) + '" value="' + (v || "") + '"></td>';
       }).join("") + g.rates.map((r) => '<td class="num calc" data-trate="' + r.key + '"></td>').join("")).join("") +
       "</tr>";
@@ -1576,7 +1780,7 @@ function updateTargetRates(tr) {
   const s = targetOf(n, ym);
   tr.querySelectorAll("[data-tg]").forEach((inp) => {
     const k = inp.dataset.tg.slice(inp.dataset.tg.lastIndexOf("|") + 1);
-    s[k] = k === "ip" ? ipToOuts(inp.value) : n0(inp.value);
+    s[k] = OUTS_KEYS.indexOf(k) >= 0 ? ipToOuts(inp.value) : n0(inp.value);
   });
   GROUPS.forEach((g) => g.rates.forEach((r) => {
     const td = tr.querySelector('[data-trate="' + r.key + '"]');
@@ -1611,6 +1815,45 @@ async function call(fn, arg, msg) {
 /* ══════════════════════════════════════════
    画面の制御
    ══════════════════════════════════════════ */
+/* ══════════════════════════════════════════
+   競技の切り替え。チームに入るたびに、その競技の項目・表記にします
+   ══════════════════════════════════════════ */
+function setProfile(sport) {
+  const next = profileOf(sport);
+  const changed = next !== PROFILE;
+  PROFILE = next;
+  ROLES = PROFILE.roles;
+  GROUPS = PROFILE.groups;
+  ITEM_SUMS = PROFILE.vol;
+  const items = GROUPS.reduce((a, g) => a.concat(g.items), []);
+  GOAL_KEYS = items.map((m) => m.key);
+  NUM_GAME = GOAL_KEYS.slice();
+  OUTS_KEYS = items.filter((m) => m.outs).map((m) => m.key);
+  if (changed) { STAT_SORT = {}; RES_SORT = { key: "", dir: -1 }; }
+
+  /* ノートを書く：ポジションのチェック、試合の成績の欄、練習内容の候補 */
+  $("#n-roles").innerHTML = ROLES.map((r) => '<label><input type="checkbox" value="' + esc(r) + '"> ' + esc(r) + "</label>").join("");
+  $("#n-roles").style.gridTemplateColumns = "repeat(" + Math.min(ROLES.length, 4) + ",1fr)";
+  $("#n-bbStats").hidden = !isBaseball();
+  $("#n-sportStats").innerHTML = isBaseball() ? "" : GROUPS.map((g) =>
+    '<div data-grp="' + g.key + '"><div class="sub">' + esc(g.formTitle) + '</div><div class="fields">' +
+    g.items.map((m) => '<label class="f" for="n-' + m.key + '">' + esc(m.nm) +
+      '<input id="n-' + m.key + '" type="number" min="0" placeholder="0"></label>').join("") + "</div></div>").join("");
+  $("#menuList").innerHTML = PROFILE.menu.map((m) => '<option value="' + esc(m) + '">').join("");
+
+  /* 説明の文。上限の項目と、少ないほど良い項目の名前を並べます */
+  const capNames = items.filter((m) => m.cap).map((m) => m.nm.replace(/（.*）/, ""));
+  const lowNames = capNames.concat(GROUPS.reduce((a, g) => a.concat(g.rates.filter((r) => !r.hi).map((r) => r.nm)), []));
+  $$(".capNote").forEach((e) => (e.textContent = capNames.length ? capNames.join("・") + "は「上限」で、超えると赤になります。" : ""));
+  $("#tgtCapNote").textContent = capNames.length ? capNames.join("・") + "は「ここまでに抑える」上限として入れてください。" : "";
+  $("#lowNote").textContent = lowNames.length ? lowNames.join("・") + "は、少ないほうが上位です。" : "";
+  $("#tgtRateNote").textContent = GROUPS.map((g) => g.rates.map((r) => r.nm).join("・")).join("、") + "は、入れた数字から自動で計算します。";
+  const vol = ITEM_SUMS.filter((v) => !v.km).map((v) => "「" + v.words[0] + "」は量の数字（" + v.unit + "）");
+  $("#practiceNote").textContent = PROFILE.practiceNote ||
+    vol.concat(ITEM_SUMS.some((v) => v.km) ? ["「ランニング」は km の数字"] : []).join("、") + "が、練習量の集計に入ります。";
+  renderVsel();
+}
+
 function renderAll() {
   const staff = isStaff(ME);
   $$(".po").forEach((e) => (e.hidden = staff));
@@ -1634,7 +1877,7 @@ $("#saveNote").addEventListener("click", async () => {
   if (!date) { showErr("日付を入れてください"); return; }
   const kind = NOTE_KIND, game = kind === "試合";
   const roles = getRoles();
-  if (!roles.length) { showErr("野手・投手・その他から1つ以上チェックしてください"); return; }
+  if (!roles.length) { showErr(ROLES.join("・") + "から1つ以上チェックしてください"); return; }
   const val = (k) => $("#n-" + k).value.trim();
   const o = {
     name: ME, date, dow: dowOf(date), kind, roles: roles.join(","),
@@ -1648,19 +1891,18 @@ $("#saveNote").addEventListener("click", async () => {
   const items = game ? [] : getItems();
   if (items.some((it) => !it.w)) { showErr("練習内容が空の行があります。内容を書くか、×で行を消してください"); return; }
   o.items = JSON.stringify(items);
-  Object.assign(o, game ? { swing: 0, tee: 0, pitch: 0, run: 0 } : itemSums(items));
-  /* 試合の打撃は野手、投手成績は投手にチェックしたときだけ保存します */
-  const use = (k) => game && (BAT_KEYS.indexOf(k) >= 0 ? roles.indexOf("野手") >= 0 : roles.indexOf("投手") >= 0);
-  NUM_GAME.forEach((k) => (o[k] = use(k) ? n0(val(k)) : ""));
+  /* 練習量は、野球は素振り・ティー・投球・走った距離の欄に入れます（ほかの競技は表示のときに練習内容から数えます） */
+  Object.assign(o, { swing: 0, tee: 0, pitch: 0, run: 0 }, game ? {} : itemSums(items));
+  /* 試合の成績は、そのグループのポジションにチェックしたときだけ保存します（野球なら打撃は野手、投手成績は投手） */
+  const use = (k) => game && GROUPS.some((g) => g.items.some((m) => m.key === k) && g.roles.some((r) => roles.indexOf(r) >= 0));
+  const stats = {};
+  NUM_GAME.forEach((k) => (stats[k] = use(k) ? n0(val(k)) : ""));
+  /* 野球の成績は決まった列に、ほかの競技の成績は stats にまとめて送ります */
+  if (isBaseball()) Object.assign(o, stats);
+  else o.stats = JSON.stringify(stats);
   TEXT_GAME.forEach((k) => (o[k] = game ? val(k) : ""));
-  if (game) {
-    const x = (k) => n0(o[k]);
-    const bad =
-      x("ob") > x("pa") ? "出塁が打席より多くなっています" :
-      x("h") > x("ob") ? "安打が出塁より多くなっています（出塁は安打＋四死球の数です）" :
-      x("xbh") + x("hr") > x("h") ? "長打と本塁打の合計が安打より多くなっています" :
-      x("phr") > x("ph") ? "被本塁打が被安打より多くなっています" :
-      Math.round((x("ip") % 1) * 10) > 2 ? "投球回の小数は .1（1/3）か .2（2/3）で入れてください" : "";
+  if (game && PROFILE.check) {
+    const bad = PROFILE.check((k) => n0(stats[k]));
     if (bad) { showErr(bad); return; }
   }
   if (await call("upsertLog", { log: o }, md(date) + " の" + kind + "ノートを保存しました")) loadNote(date);
@@ -1720,7 +1962,7 @@ $("#saveTargets").addEventListener("click", async () => {
 
 /* 一覧の操作 */
 document.addEventListener("click", async (e) => {
-  const t = e.target.closest("[data-lopen],[data-ldel],[data-sort],[data-bsort],[data-psort],[data-rsort],[data-cmsave],[data-popen]");
+  const t = e.target.closest("[data-lopen],[data-ldel],[data-sort],[data-gsort],[data-rsort],[data-cmsave],[data-popen]");
   if (!t) return;
   if (t.dataset.rsort) {
     const k = t.dataset.rsort;
@@ -1735,9 +1977,12 @@ document.addEventListener("click", async (e) => {
     $("#pMonthForm").scrollIntoView({ behavior: "smooth", block: "start" });
     return;
   }
-  if (t.dataset.psort) {
-    const k = t.dataset.psort;
-    PIT_SORT = { key: k, dir: PIT_SORT.key === k ? -PIT_SORT.dir : -1 };
+  /* 試合成績の表の並べ替え。"グループ|項目" の形 */
+  if (t.dataset.gsort) {
+    const [gk, k] = t.dataset.gsort.split("|");
+    const g = GROUPS.find((x) => x.key === gk);
+    const cur = STAT_SORT[gk] || { key: g ? g.sortKey : k, dir: -1 };
+    STAT_SORT[gk] = { key: k, dir: cur.key === k ? -cur.dir : -1 };
     renderGames();
     return;
   }
@@ -1745,12 +1990,6 @@ document.addEventListener("click", async (e) => {
     const k = t.dataset.sort;
     SORT = { key: k, dir: SORT.key === k ? -SORT.dir : -1 };
     renderTeam();
-    return;
-  }
-  if (t.dataset.bsort) {
-    const k = t.dataset.bsort;
-    BAT_SORT = { key: k, dir: BAT_SORT.key === k ? -BAT_SORT.dir : -1 };
-    renderGames();
     return;
   }
   if (t.dataset.lopen) {
@@ -1824,7 +2063,8 @@ document.addEventListener("change", (e) => {
   /* 野手・投手の表示切り替え。どちらか1つは残します */
   if (el.dataset.view) {
     VIEW[el.dataset.view] = el.checked;
-    if (!VIEW.bat && !VIEW.pit) VIEW[el.dataset.view === "bat" ? "pit" : "bat"] = true;
+    /* 全部外したときは、ほかのグループを1つ戻します */
+    if (!GROUPS.some((g) => VIEW[g.key] !== false)) VIEW[(GROUPS.find((g) => g.key !== el.dataset.view) || GROUPS[0]).key] = true;
     try { localStorage.setItem(VIEW_KEY, JSON.stringify(VIEW)); } catch (err) {}
     renderVsel(); renderMy(); renderTeam(); renderTargets();
     return;
@@ -2275,6 +2515,14 @@ function normLog(l) {
   TEXT_GAME.concat(["report", "comment", "commentBy", "kind", "tstart", "tend"]).forEach((k) => (o[k] = o[k] == null ? "" : String(o[k])));
   o.mins = n0(o.mins);
   o.items = parseItems(o.items);
+  /* 野球以外の競技の試合の成績は stats にまとめて入っているので、ふつうの項目として読み出します */
+  if (!isBaseball()) {
+    let st = {};
+    try { st = JSON.parse(o.stats || "{}") || {}; } catch (e) {}
+    NUM_GAME.forEach((k) => (o[k] = n0(st[k])));
+    /* 練習量は、練習内容の言葉から数えます */
+    Object.assign(o, itemSums(o.items));
+  }
   o.roles = String(o.roles || "").split(",").filter((r) => ROLES.indexOf(r) >= 0);
   if (KINDS.indexOf(o.kind) < 0) o.kind = "練習";
   o.date = String(o.date || "");
@@ -2283,17 +2531,19 @@ function normLog(l) {
 function apply(d) {
   MEMBERS = (d && d.members) || [];
   STAFF = (d && d.staff) || [];
-  LOGS = ((d && d.logs) || []).map(normLog);
-  /* 試合成績は、区分が「試合」のノートから集計します */
-  GAMES = LOGS.filter((l) => l.kind === "試合");
-  TARGETS = (d && d.targets) || {};
   if (d && d.version) checkServer(d.version);
   if (d && d.role) ROLE = d.role;
   if (d && d.team) {
     TEAM = d.team;
+    /* チームの競技に合わせて、画面の項目を切り替えます（ノートを読む前に） */
+    setProfile(TEAM.sport);
     /* オーナーと組織の管理者が「チーム一覧」に戻れるよう、チームの組織を覚えます */
     if (ROLE === "owner" || ROLE === "orgadmin") setSel(TEAM.orgId, TEAM.id);
   }
+  LOGS = ((d && d.logs) || []).map(normLog);
+  /* 試合成績は、区分が「試合」のノートから集計します */
+  GAMES = LOGS.filter((l) => l.kind === "試合");
+  TARGETS = (d && d.targets) || {};
   $("#teamTxt").textContent = [TEAM.orgName, TEAM.name].filter(Boolean).join(" ");
 }
 /* 指導者の名前は、指導者・組織の管理者・オーナーとしてログインしたときだけ選べます */
@@ -2321,8 +2571,7 @@ async function boot() {
   $("#pYear").innerHTML = years; $("#pYear").value = THIS_YEAR;
   $("#sp-year").innerHTML = years; $("#sp-year").value = THIS_YEAR;
   $("#pMonth").value = THIS_MONTH;
-  $("#n-roles").innerHTML = ROLES.map((r) => '<label><input type="checkbox" value="' + r + '"> ' + r + "</label>").join("");
-  $("#menuList").innerHTML = MENU_PRESETS.map((m) => '<option value="' + m + '">').join("");
+  setProfile("");
   if (DEMO) {
     $("#demo").hidden = false;
     $("#demo").innerHTML = "<b>お試しモードです。</b>入力はこの端末のブラウザにだけ保存されます。" +
