@@ -106,11 +106,22 @@ table.t tbody tr:hover{background:#F8FAFD}
 .okmsg{background:var(--ok-soft);color:var(--ok);border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px;font-weight:700}
 .demo-box{background:var(--warn-soft);color:#7A4A08;border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px}
 .menu-chips{display:flex;flex-wrap:wrap;gap:6px;margin:2px 0 8px}
-.menu-chips button{font:inherit;font-size:13px;font-weight:700;color:var(--accent);background:var(--accent-soft);border:1px solid #C9D6EA;border-radius:99px;padding:5px 12px;cursor:pointer}
-.menu-chips button:hover{background:#D6E2F2}
-.menu-chips button small{font-weight:400;color:var(--muted);margin-left:3px}
+/* 練習メニューのラベル（色付き） */
+.menu-chips button{font:inherit;font-size:13px;font-weight:700;color:#fff;background:var(--lc,#1E5BC6);border:0;border-radius:6px;padding:6px 12px;cursor:pointer}
+.menu-chips button:hover{filter:brightness(1.1)}
+.menu-chips button small{font-weight:400;opacity:.85;margin-left:4px}
+.swatches{display:flex;flex-wrap:wrap;gap:8px;margin-top:4px}
+.swatches label{position:relative;cursor:pointer}
+.swatches input{position:absolute;opacity:0;width:1px;height:1px}
+.swatches span{display:block;width:28px;height:28px;border-radius:50%;background:var(--lc);border:3px solid #fff;box-shadow:0 0 0 1px var(--line)}
+.swatches input:checked + span{box-shadow:0 0 0 2px var(--ink)}
+.swatches input:focus-visible + span{outline:2px solid var(--accent);outline-offset:2px}
+.ldot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--lc,#1E5BC6);margin-right:6px;vertical-align:0}
+.irow select.iw{border-left:6px solid var(--lc,var(--line))}
+.mrow select{width:auto}
+@media(max-width:560px){ .mrow{grid-template-columns:1fr 4.5em auto} .mrow .mc{order:4;grid-column:1/-1;width:100%} .mrow.ihead{display:none} }
 .menu-add summary{margin:0 0 8px}
-.mrow{display:grid;grid-template-columns:1fr 6em auto;gap:6px;margin-bottom:6px}
+.mrow{display:grid;grid-template-columns:1fr 5em 7.5em auto;gap:6px;margin-bottom:6px}
 .mrow.ihead span{font-size:12px;font-weight:600;color:var(--muted)}
 .irow{display:grid;grid-template-columns:1.3fr .9fr 1.5fr 36px;gap:6px;align-items:center;margin-bottom:6px}
 .irow.ihead span{font-size:12px;font-weight:600;color:var(--muted)}
@@ -443,6 +454,8 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
               <label class="f" for="nm-unit">量の単位（任意）<input id="nm-unit" type="text" maxlength="6" placeholder="例：本・球・分・km"></label>
               <button type="button" class="btn small" id="nm-save">ラベルを保存</button>
             </div>
+            <div class="f" style="margin-top:8px">色</div>
+            <div class="swatches" id="nm-colors" role="radiogroup" aria-label="ラベルの色"></div>
             <p class="note" style="margin-top:6px">保存したラベルはチームのみんなで使えます。直したり消したりは、指導者が「設定」で行います。</p>
           </details>
           <div class="irow ihead"><span>練習内容</span><span>量</span><span>備考</span><span></span></div>
@@ -689,7 +702,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <button class="btn ghost small" id="st-addStaff" style="margin-top:4px">＋ 指導者を追加</button>
       <p class="note" style="margin-top:8px">部員を消しても、その部員の記録はスプレッドシートに残ります（画面には出なくなります）。</p>
       <div class="sub">練習メニューのラベル <span class="label-sm">「ノートを書く」でボタンとして出ます</span></div>
-      <div class="mrow ihead"><span>練習メニューの名前</span><span>単位</span><span></span></div>
+      <div class="mrow ihead"><span>練習メニューの名前</span><span>単位</span><span>色</span><span></span></div>
       <div id="st-menus"></div>
       <button class="btn ghost small" id="st-addMenu" style="margin-top:4px">＋ ラベルを追加</button>
       <div class="actions"><span class="spacer"></span><button class="btn" id="st-save">設定を保存</button></div>
@@ -1010,7 +1023,7 @@ function outsTxt(o) {
    ══════════════════════════════════════════ */
 const DEMO = !API_URL;
 /* この画面が必要とするサーバー（Code.gs）の版。Code.gs の VERSION と合わせます */
-const NEED_SERVER = "server v7";
+const NEED_SERVER = "server v8";
 function checkServer(v) {
   const old = !!v && v !== NEED_SERVER;
   $("#srvWarn").hidden = !old;
@@ -1085,6 +1098,19 @@ let ROLE = "";
 let TEAM = { id: "", name: "", code: "", orgName: "" };
 /* チームの練習メニューのラベル [{ n: 名前, u: 単位 }] */
 let TEAM_MENUS = [];
+/* ラベルの色20色（Code.gs の MENU_COLORS と同じ並び）。白い文字が読める濃さにしています */
+const LABEL_COLORS = [
+  { k: "red", nm: "レッド", v: "#D32F2F" }, { k: "coral", nm: "コーラル", v: "#D84315" },
+  { k: "orange", nm: "オレンジ", v: "#E65100" }, { k: "amber", nm: "アンバー", v: "#B26A00" },
+  { k: "yellow", nm: "イエロー", v: "#9E7C00" }, { k: "lime", nm: "ライム", v: "#558B2F" },
+  { k: "green", nm: "グリーン", v: "#2E7D32" }, { k: "emerald", nm: "エメラルド", v: "#00875A" },
+  { k: "teal", nm: "ティール", v: "#00796B" }, { k: "cyan", nm: "シアン", v: "#00838F" },
+  { k: "sky", nm: "スカイ", v: "#0277BD" }, { k: "blue", nm: "ブルー", v: "#1E5BC6" },
+  { k: "navy", nm: "ネイビー", v: "#1A237E" }, { k: "indigo", nm: "インディゴ", v: "#3949AB" },
+  { k: "violet", nm: "バイオレット", v: "#5E35B1" }, { k: "purple", nm: "パープル", v: "#8E24AA" },
+  { k: "magenta", nm: "マゼンタ", v: "#AD1457" }, { k: "pink", nm: "ピンク", v: "#D81B60" },
+  { k: "brown", nm: "ブラウン", v: "#6D4C41" }, { k: "gray", nm: "グレー", v: "#546E7A" }
+];
 const isStaff = (n) => STAFF.indexOf(n) >= 0;
 const canManage = () => ROLE === "staff" || ROLE === "orgadmin" || ROLE === "owner";
 const ROLE_NAMES = { team: "部員", staff: "指導者", orgadmin: "組織の管理者", owner: "オーナー" };
@@ -1246,7 +1272,7 @@ function itemsTable(items) {
   if (!items.length) return "";
   const memo = items.some((it) => it.m);
   return '<table class="items"><thead><tr><th>練習内容</th><th>量</th>' + (memo ? "<th>備考</th>" : "") + "</tr></thead><tbody>" +
-    items.map((it) => "<tr><td>" + esc(it.w) + '</td><td class="q">' + esc(it.q || "—") + "</td>" + (memo ? "<td>" + esc(it.m) + "</td>" : "") + "</tr>").join("") +
+    items.map((it) => "<tr><td>" + labelDot(it.w) + esc(it.w) + '</td><td class="q">' + esc(it.q || "—") + "</td>" + (memo ? "<td>" + esc(it.m) + "</td>" : "") + "</tr>").join("") +
     "</tbody></table>";
 }
 /* 量の文字から数字を取り出します（「３００本」「3.5km」など） */
@@ -1358,7 +1384,7 @@ function renderMy() {
   $("#myMenuVol").innerHTML = !TEAM_MENUS.length
     ? '<p class="note">練習メニューのラベルはまだありません。「ノートを書く」の「＋ 練習メニューのラベルを作る」から作れます。</p>'
     : '<table class="t" style="min-width:0"><thead><tr><th class="l">練習メニュー</th><th>練習量</th><th>やった日数</th></tr></thead><tbody>' +
-      vol.map((v) => '<tr><td class="l"><b>' + esc(v.m.n) + "</b></td>" +
+      vol.map((v) => '<tr><td class="l">' + labelDot(v.m.n) + "<b>" + esc(v.m.n) + "</b></td>" +
         '<td class="num">' + (v.days ? "<b>" + f1(v.total) + "</b>" + (v.m.u ? " " + esc(v.m.u) : "") : "–") + "</td>" +
         '<td class="num">' + (v.days ? v.days + "日" : "–") + "</td></tr>").join("") +
       "</tbody></table>";
@@ -1399,14 +1425,31 @@ function lastRoles(name) {
 }
 const roleTags = (roles) => roles.map((r) => ' <span class="tag">' + esc(r) + "</span>").join("");
 
-/* 練習内容の入力行 */
-/* 練習メニューのラベルの単位（ラベルにない練習なら空） */
-const unitOf = (name) => { const m = TEAM_MENUS.find((x) => x.n === name); return m ? m.u : ""; };
+/* 練習内容の入力行。練習内容はチームのラベルから選ぶだけで、文字は打てません */
+const menuOf = (name) => TEAM_MENUS.find((x) => x.n === name);
+const unitOf = (name) => { const m = menuOf(name); return m ? m.u : ""; };
+const colorOf = (key) => (LABEL_COLORS.find((c) => c.k === key) || LABEL_COLORS[6]).v;
+/* ラベルの色の小さな丸（ノートのカードやマイノートの表で使います） */
+const labelDot = (name) => { const m = menuOf(name); return m ? '<span class="ldot" style="--lc:' + colorOf(m.c) + '"></span>' : ""; };
 const qtyHint = (name) => (unitOf(name) ? "数字だけでOK（" + unitOf(name) + "）" : PROFILE.itemEx[1]);
+/* 選べるラベルの一覧。前に書いたノートにラベル以外の練習があれば、それも残して見せます */
+function menuOptions(cur) {
+  const has = !cur || menuOf(cur);
+  return '<option value="">' + (TEAM_MENUS.length ? "ラベルを選ぶ" : "先にラベルを作ってください") + "</option>" +
+    TEAM_MENUS.map((m) => '<option value="' + esc(m.n) + '"' + (m.n === cur ? " selected" : "") + ">" + esc(m.n) + "</option>").join("") +
+    (has ? "" : '<option value="' + esc(cur) + '" selected>' + esc(cur) + "（ラベル以外）</option>");
+}
+function paintRow(row) {
+  const w = row.querySelector(".iw").value;
+  const m = menuOf(w);
+  row.querySelector(".iw").style.setProperty("--lc", m ? colorOf(m.c) : "var(--line)");
+  row.querySelector(".iq").placeholder = qtyHint(w);
+}
 function itemRow(it) {
   it = it || {};
+  const m = menuOf(it.w);
   return '<div class="irow">' +
-    '<input type="text" class="iw" list="menuList" aria-label="練習内容" placeholder="' + PROFILE.itemEx[0] + '" value="' + esc(it.w || "") + '">' +
+    '<select class="iw" aria-label="練習内容" style="--lc:' + (m ? colorOf(m.c) : "var(--line)") + '">' + menuOptions(it.w || "") + "</select>" +
     '<input type="text" class="iq" aria-label="量" placeholder="' + esc(qtyHint(it.w)) + '" value="' + esc(it.q || "") + '">' +
     '<input type="text" class="im" aria-label="備考" placeholder="備考（ねらい・気づいたこと）" value="' + esc(it.m || "") + '">' +
     '<button type="button" class="x" data-ix title="この行を消す" aria-label="この行を消す">×</button></div>';
@@ -1425,38 +1468,55 @@ function getItems() {
   }));
 }
 
-/* チームの練習メニューのラベルをボタンにします。入力候補にも入れます */
+/* チームの練習メニューのラベルを、色付きのボタンにします */
 function renderMenus() {
   $("#n-menus").innerHTML = TEAM_MENUS.length
-    ? TEAM_MENUS.map((m, i) => '<button type="button" data-menu="' + i + '">' + esc(m.n) + (m.u ? "<small>" + esc(m.u) + "</small>" : "") + "</button>").join("")
-    : '<span class="note">練習メニューのラベルはまだありません。下の「＋ 練習メニューのラベルを作る」から作れます。</span>';
-  const names = PROFILE.menu.concat(TEAM_MENUS.map((m) => m.n).filter((n) => PROFILE.menu.indexOf(n) < 0));
-  $("#menuList").innerHTML = names.map((m) => '<option value="' + esc(m) + '">').join("");
+    ? TEAM_MENUS.map((m, i) => '<button type="button" data-menu="' + i + '" style="--lc:' + colorOf(m.c) + '">' + esc(m.n) +
+        (m.u ? "<small>" + esc(m.u) + "</small>" : "") + "</button>").join("")
+    : '<span class="note">練習メニューのラベルはまだありません。下の「＋ 練習メニューのラベルを作る」から作ってください。練習内容はラベルから選びます。</span>';
+  /* 書きかけの行の選択肢も、いまのラベルに合わせます（選んでいたものはそのまま） */
+  $$("#n-items .irow").forEach((r) => {
+    const sel = r.querySelector(".iw");
+    const cur = sel.value;
+    sel.innerHTML = menuOptions(cur);
+    sel.value = cur;
+    paintRow(r);
+  });
+  /* ラベルを作るときの名前の候補（競技でよくある練習） */
+  $("#menuList").innerHTML = PROFILE.menu.filter((n) => !menuOf(n)).map((m) => '<option value="' + esc(m) + '">').join("");
+  /* 新しく作るラベルの色は、まだ使っていない色を先に選んでおきます */
+  if (!$("#nm-colors").querySelector("input:checked") || !$("#nm-name").value) {
+    const used = TEAM_MENUS.map((m) => m.c);
+    const next = LABEL_COLORS.find((c) => used.indexOf(c.k) < 0) || LABEL_COLORS[0];
+    const r = $("#nm-colors").querySelector('input[value="' + next.k + '"]');
+    if (r) r.checked = true;
+  }
 }
-/* ラベルを押すと、空いている行（なければ新しい行）に入れて、量の欄に移ります */
+/* ラベルを押すと、空いている行（なければ新しい行）で選んで、量の欄に移ります */
 $("#n-menus").addEventListener("click", (e) => {
   const b = e.target.closest("[data-menu]");
   if (!b) return;
   const m = TEAM_MENUS[Number(b.dataset.menu)];
   if (!m) return;
-  let row = $$("#n-items .irow").find((r) => !r.querySelector(".iw").value.trim());
+  let row = $$("#n-items .irow").find((r) => !r.querySelector(".iw").value);
   if (!row) { $("#n-items").insertAdjacentHTML("beforeend", itemRow()); row = $("#n-items .irow:last-child"); }
   row.querySelector(".iw").value = m.n;
-  row.querySelector(".iq").placeholder = qtyHint(m.n);
+  paintRow(row);
   row.querySelector(".iq").focus();
   NOTE_DIRTY = true;
 });
-/* 練習内容を手で入れたときも、ラベルと同じ名前なら単位を案内します */
-$("#n-items").addEventListener("input", (e) => {
-  if (!e.target.classList.contains("iw")) return;
-  e.target.closest(".irow").querySelector(".iq").placeholder = qtyHint(e.target.value.trim());
+/* 一覧から選んだときも、色と単位の案内を合わせます */
+$("#n-items").addEventListener("change", (e) => {
+  if (e.target.classList.contains("iw")) paintRow(e.target.closest(".irow"));
 });
 $("#nm-save").addEventListener("click", async () => {
   const name = $("#nm-name").value.trim(), unit = $("#nm-unit").value.trim();
+  const picked = $("#nm-colors").querySelector("input:checked");
   if (!name) { showErr("練習メニューの名前を入れてください"); return; }
-  if (await call("addMenu", { name, unit }, "ラベル「" + name + "」を保存しました")) {
+  if (await call("addMenu", { name, unit, color: picked ? picked.value : "blue" }, "ラベル「" + name + "」を保存しました")) {
     $("#nm-name").value = ""; $("#nm-unit").value = "";
     $("#n-menuAdd").open = false;
+    renderMenus();
   }
 });
 
@@ -2184,15 +2244,21 @@ function menuRow(m) {
   m = m || {};
   return '<div class="mrow"><input type="text" class="mn" value="' + esc(m.n || "") + '" placeholder="例：ロングティー" aria-label="練習メニューの名前">' +
     '<input type="text" class="mu" maxlength="6" value="' + esc(m.u || "") + '" placeholder="本" aria-label="単位">' +
+    '<select class="mc" aria-label="色" style="border-left:8px solid ' + colorOf(m.c || "blue") + '">' +
+      LABEL_COLORS.map((c) => '<option value="' + c.k + '"' + (c.k === (m.c || "blue") ? " selected" : "") + ">" + c.nm + "</option>").join("") + "</select>" +
     '<button type="button" class="btn ghost small" data-nrm title="この行を消す">消す</button></div>';
 }
 const readNames = (sel) => $$(sel + " .nm").map((i) => ({ old: i.dataset.old, name: i.value.trim() })).filter((m) => m.name);
 $("#st-addMember").addEventListener("click", () => { $("#st-members").insertAdjacentHTML("beforeend", nameRow()); $("#st-members .nrow:last-child input").focus(); });
 $("#st-addStaff").addEventListener("click", () => { $("#st-staff").insertAdjacentHTML("beforeend", nameRow()); $("#st-staff .nrow:last-child input").focus(); });
+/* 設定でラベルの色を変えたら、行の左の色も変えます */
+$("#st-menus").addEventListener("change", (e) => {
+  if (e.target.classList.contains("mc")) e.target.style.borderLeftColor = colorOf(e.target.value);
+});
 $("#st-addMenu").addEventListener("click", () => { $("#st-menus").insertAdjacentHTML("beforeend", menuRow()); $("#st-menus .mrow:last-child input").focus(); });
 $("#st-save").addEventListener("click", async () => {
   const members = readNames("#st-members"), staff = readNames("#st-staff");
-  const menus = $$("#st-menus .mrow").map((r) => ({ n: r.querySelector(".mn").value.trim(), u: r.querySelector(".mu").value.trim() })).filter((m) => m.n);
+  const menus = $$("#st-menus .mrow").map((r) => ({ n: r.querySelector(".mn").value.trim(), u: r.querySelector(".mu").value.trim(), c: r.querySelector(".mc").value })).filter((m) => m.n);
   const removed = MEMBERS.filter((n) => !members.some((m) => m.old === n)).length +
     STAFF.filter((n) => !staff.some((m) => m.old === n)).length;
   if (removed && !confirm("消した部員・指導者は画面に出なくなります（記録は残ります）。保存してよろしいですか？")) return;
@@ -2671,6 +2737,8 @@ async function boot() {
   $("#sp-year").innerHTML = years; $("#sp-year").value = THIS_YEAR;
   $("#pMonth").value = THIS_MONTH;
   setProfile("");
+  /* ラベルを作るときの色（20色） */
+  $("#nm-colors").innerHTML = LABEL_COLORS.map((c) => '<label title="' + c.nm + '"><input type="radio" name="nm-color" value="' + c.k + '" aria-label="' + c.nm + '"><span style="--lc:' + c.v + '"></span></label>').join("");
   if (DEMO) {
     $("#demo").hidden = false;
     $("#demo").innerHTML = "<b>お試しモードです。</b>入力はこの端末のブラウザにだけ保存されます。" +
