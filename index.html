@@ -198,6 +198,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
 
 <main>
   <div id="demo" class="demo-box" hidden></div>
+  <div id="srvWarn" class="err" hidden></div>
   <div id="err" class="err" hidden></div>
   <div id="msg" class="okmsg" hidden></div>
 
@@ -800,6 +801,14 @@ function outsTxt(o) {
    通信
    ══════════════════════════════════════════ */
 const DEMO = !API_URL;
+/* この画面が必要とするサーバー（Code.gs）の版。Code.gs の VERSION と合わせます */
+const NEED_SERVER = "server v5";
+function checkServer(v) {
+  const old = !!v && v !== NEED_SERVER;
+  $("#srvWarn").hidden = !old;
+  if (old) $("#srvWarn").textContent = "サーバー（Apps Script）の Code.gs が古い版です（いま：" + v + "／必要：" + NEED_SERVER + "）。" +
+    "最新の Code.gs を貼り直して「デプロイを管理 → 新バージョン」でデプロイしてください。それまで一部の機能（競技を選んでチームを作るなど）が使えません。";
+}
 const TOKEN_KEY = "dreaming-token";
 const SEL_KEY = "dreaming-selected";
 let TOKEN = "";
@@ -1929,7 +1938,7 @@ function showScreen(which) {
   rp.textContent = ROLE_NAMES[ROLE] || "";
   rp.className = "pill role " + ROLE;
   $("#teamTxt").textContent = which === "app" ? [TEAM.orgName, TEAM.name].filter(Boolean).join(" ") : which === "org" ? ORG_NAME : "";
-  if (which === "gate") showGate("login");
+  if (which === "gate") { showGate("login"); $("#srvWarn").hidden = true; }
   fitNav();
 }
 /* ヘッダーが2行になっても、タブがその下にくるようにします */
@@ -2002,12 +2011,15 @@ async function showOwnerHome() {
           '<button class="btn danger small" data-reject="' + esc(r.id) + '">却下</button>' +
           '<button class="btn small" data-approve="' + esc(r.id) + '">承認する</button></div></div>').join("")
       : '<p class="note">新しい申し込みはありません。</p>';
+    checkServer(d.version || "server v4");
     $("#ownerInq").innerHTML = inqHtml(d.inquiries, true);
-    /* 次に使えそうな競技コードを、入力欄の例として出します */
-    const nums = d.sports.map((x) => /^S(\d+)$/.exec(x.code)).filter(Boolean).map((m) => Number(m[1]));
+    /* 次に使えそうな競技コードを、入力欄の例として出します（古いサーバーは競技の一覧を返さないので空にします） */
+    const sports = d.sports || [];
+    const nums = sports.map((x) => /^S(\d+)$/.exec(x.code)).filter(Boolean).map((m) => Number(m[1]));
     $("#ns-code").placeholder = "例：S" + String((nums.length ? Math.max.apply(null, nums) : 0) + 1).padStart(2, "0");
     $("#sportList").innerHTML = "<thead><tr><th class=\"l\">競技コード</th><th class=\"l\">競技</th></tr></thead><tbody>" +
-      d.sports.map((x) => "<tr><td class=\"l\"><b>" + esc(x.code) + "</b></td><td class=\"l\">" + esc(x.name) + "</td></tr>").join("") + "</tbody>";
+      (sports.length ? sports.map((x) => "<tr><td class=\"l\"><b>" + esc(x.code) + "</b></td><td class=\"l\">" + esc(x.name) + "</td></tr>").join("")
+        : '<tr><td class="l" colspan="2"><span class="note">サーバーが古い版のため、競技の一覧を読めません。</span></td></tr>') + "</tbody>";
     let h = '<thead><tr><th class="l">組織</th><th class="l">組織コード</th><th class="l">管理者</th><th>チーム</th><th class="l">チーム名</th><th></th></tr></thead><tbody>';
     if (!d.orgs.length) h += '<tr><td class="l" colspan="6"><span class="note">まだ組織がありません。</span></td></tr>';
     d.orgs.forEach((g) => {
@@ -2047,6 +2059,7 @@ async function showOrgHome() {
   setSel(SEL.org, "");
   try {
     const d = await api("orgHome");
+    checkServer(d.version || "server v4");
     ORG_NAME = d.org.name;
     ORG_CODE = d.org.code;
     showScreen("org");
@@ -2274,6 +2287,7 @@ function apply(d) {
   /* 試合成績は、区分が「試合」のノートから集計します */
   GAMES = LOGS.filter((l) => l.kind === "試合");
   TARGETS = (d && d.targets) || {};
+  if (d && d.version) checkServer(d.version);
   if (d && d.role) ROLE = d.role;
   if (d && d.team) {
     TEAM = d.team;
