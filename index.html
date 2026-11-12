@@ -119,6 +119,12 @@ table.t tbody tr:hover{background:#F8FAFD}
 .ldot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--lc,#1E5BC6);margin-right:6px;vertical-align:0}
 .irow select.iw{border-left:6px solid var(--lc,var(--line))}
 .mrow select{width:auto}
+.ge-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px}
+.ge-row label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
+.ge-row input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.ge-row.off .ge-nm{color:var(--muted);text-decoration:line-through}
+.ge-cap{display:flex;align-items:center;gap:6px;align-self:end;padding-bottom:10px;font-size:13px;color:var(--ink)}
+.ge-cap input{width:18px;height:18px;margin:0}
 @media(max-width:560px){ .mrow{grid-template-columns:1fr 4.5em auto} .mrow .mc{order:4;grid-column:1/-1;width:100%} .mrow.ihead{display:none} }
 .menu-add summary{margin:0 0 8px}
 .mrow{display:grid;grid-template-columns:1fr 5em 7.5em auto;gap:6px;margin-bottom:6px}
@@ -674,6 +680,21 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       </p>
       <div class="tscroll"><table class="t" id="tgtTable"></table></div>
     </div>
+
+    <!-- 目標の項目（指導者・組織の管理者・オーナー） -->
+    <div class="panel staffOnly" id="goalEdit" hidden>
+      <h3>目標の項目 <span class="label-sm">チームに合わせて、項目を外したり足したりできます</span></h3>
+      <div id="ge-list"></div>
+      <div class="sub">項目を足す</div>
+      <div class="fields">
+        <label class="f" for="ge-grp" id="ge-grpBox">グループ<select id="ge-grp"></select></label>
+        <label class="f" for="ge-name">項目の名前<input id="ge-name" type="text" maxlength="20" placeholder="例：盗塁、パス成功"></label>
+        <label class="f ge-cap"><input type="checkbox" id="ge-cap"> 少ないほど良い（上限）</label>
+        <button class="btn small" id="ge-add" type="button">項目を足す</button>
+      </div>
+      <p class="note" style="margin-top:8px">外した項目は、目標設定・チーム全体・部員別結果・マイノートの目標に出なくなります（試合の成績には残ります）。足した項目は、「ノートを書く」の試合の成績にも入力欄が出ます。</p>
+      <div class="actions"><span class="spacer"></span><button class="btn" id="ge-save" type="button">目標の項目を保存</button></div>
+    </div>
   </section>
 
   <!-- ══ 設定（指導者・オーナー） ══ -->
@@ -683,6 +704,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <div class="fields">
         <label class="f" for="st-name">チーム名<input id="st-name" type="text"></label>
         <label class="f" for="st-code">チームコード（ログイン用・変更できません）<input id="st-code" type="text" readonly tabindex="-1" style="background:#F6F8FB;font-weight:700;letter-spacing:.05em"></label>
+        <label class="f" for="st-sport" id="st-sportBox" hidden>競技（まだ決まっていません）<select id="st-sport"></select></label>
       </div>
       <div class="fields" style="margin-top:10px">
         <label class="f" for="st-pass">新しいチームのパスワード<input id="st-pass" type="text" autocomplete="off" placeholder="変えるときだけ入れる"></label>
@@ -1023,7 +1045,7 @@ function outsTxt(o) {
    ══════════════════════════════════════════ */
 const DEMO = !API_URL;
 /* この画面が必要とするサーバー（Code.gs）の版。Code.gs の VERSION と合わせます */
-const NEED_SERVER = "server v8";
+const NEED_SERVER = "server v9";
 function checkServer(v) {
   const old = !!v && v !== NEED_SERVER;
   $("#srvWarn").hidden = !old;
@@ -1201,9 +1223,9 @@ function renderVsel() {
 
 /* 目標の指標を、グループごとのタイルにします（チーム全体・マイノート） */
 function goalTiles(cur, tgt, q) {
-  return viewGroups().map((g) =>
+  return viewGroups().filter((g) => goalItems(g).length || goalRates(g).length).map((g) =>
     '<div class="sub">' + g.nm + '</div><div class="tiles">' +
-    g.items.map((m) => {
+    goalItems(g).map((m) => {
       const c = cur[m.key], t = tgt[m.key];
       const cls = goalClass(m, c, t, q);
       return '<div class="tile"><span class="label-sm">' + m.nm + (m.cap ? "（上限）" : "") + "</span>" +
@@ -1214,7 +1236,7 @@ function goalTiles(cur, tgt, q) {
           : '<span class="note">' + (t ? (c > t ? "上限を超えています" : "あと " + fmtVal(m, t - c) + " まで") : "目標なし") + "</span>") +
         "</div>";
     }).join("") +
-    g.rates.map((r) => {
+    goalRates(g).map((r) => {
       const c = r.f(cur), t = rateTarget(r, tgt);
       return '<div class="tile rate"><span class="label-sm">' + r.nm + "（自動計算）</span>" +
         '<b class="' + rateClass(r, c, t) + '">' + r.fmt(c) + "</b>" +
@@ -1649,11 +1671,11 @@ const RANK_NOTE = '上位は <b class="rk1">1位</b>・<b class="rk2">2位</b>�
 
 /* 部員別結果：目標設定の項目について、部員ごとの実績と目標、自動計算の率 */
 function resultTable(ym, q) {
-  const gs = viewGroups();
+  const gs = viewGroups().filter((g) => goalItems(g).length || goalRates(g).length);
   const rows = MEMBERS.map((n) => ({ name: n, c: totals(n, ym), t: targetOf(n, ym) }));
   const val = (r, k) => {
     for (const g of GROUPS) {
-      const rate = g.rates.find((x) => x.key === k);
+      const rate = goalRates(g).find((x) => x.key === k);
       if (rate) { const v = rate.f(r.c); return v == null ? -1 : v; }
     }
     return r.c[k];
@@ -1663,26 +1685,26 @@ function resultTable(ym, q) {
   const rk = {};
   GROUPS.forEach((g) => {
     const elig = (r) => r.c[g.nKey] > 0;
-    g.items.forEach((m) => {
+    goalItems(g).forEach((m) => {
       rk[m.key] = ranks(rows.map((r) => (!elig(r) || (!m.cap && !(r.c[m.key] > 0)) ? null : r.c[m.key])), !!m.cap);
     });
-    g.rates.forEach((x) => { rk[x.key] = ranks(rows.map((r) => (elig(r) ? x.f(r.c) : null)), !x.hi); });
+    goalRates(g).forEach((x) => { rk[x.key] = ranks(rows.map((r) => (elig(r) ? x.f(r.c) : null)), !x.hi); });
   });
   let h = '<thead><tr><th class="l" rowspan="2">部員</th>' +
-    gs.map((g) => '<th colspan="' + (g.items.length + g.rates.length) + '" style="text-align:center">' + g.nm + "</th>").join("") +
+    gs.map((g) => '<th colspan="' + (goalItems(g).length + goalRates(g).length) + '" style="text-align:center">' + g.nm + "</th>").join("") +
     "</tr><tr>" +
-    gs.map((g) => g.items.concat(g.rates).map((m) =>
+    gs.map((g) => goalItems(g).concat(goalRates(g)).map((m) =>
       '<th data-rsort="' + m.key + '" style="cursor:pointer">' + m.nm + sortMark(RES_SORT, m.key) + "</th>").join("")).join("") +
     "</tr></thead><tbody>";
   rows.forEach((r, ri) => {
     h += '<tr><td class="l"><b>' + esc(r.name) + "</b></td>" +
       gs.map((g) =>
-        g.items.map((m) => {
+        goalItems(g).map((m) => {
           const c = r.c[m.key], t = r.t[m.key];
           return '<td class="num ' + goalClass(m, c, t, q) + rkClass(rk[m.key][ri]) + '">' + fmtVal(m, c) +
             (t ? '<span class="note"> /' + fmtVal(m, t) + "</span>" : "") + "</td>";
         }).join("") +
-        g.rates.map((x) => {
+        goalRates(g).map((x) => {
           const c = x.f(r.c), t = rateTarget(x, r.t);
           return '<td class="num calc ' + rateClass(x, c, t) + rkClass(rk[x.key][ri]) + '">' + x.fmt(c) +
             (t != null ? '<span class="note"> /' + x.fmt(t) + "</span>" : "") + "</td>";
@@ -1896,27 +1918,89 @@ let TGT_DIRTY = {};
 function renderTargets() {
   const ym = $("#tgtMonth").value || THIS_MONTH;
   const raw = (n) => (TARGETS[ym] || {})[n] || {};
-  const gs = viewGroups();
+  const gs = viewGroups().filter((g) => goalItems(g).length || goalRates(g).length);
   let h = '<thead><tr><th class="l" rowspan="2">部員</th>' +
-    gs.map((g) => '<th colspan="' + (g.items.length + g.rates.length) + '" style="text-align:center">' + g.nm + "</th>").join("") +
+    gs.map((g) => '<th colspan="' + (goalItems(g).length + goalRates(g).length) + '" style="text-align:center">' + g.nm + "</th>").join("") +
     "</tr><tr>" +
-    gs.map((g) => g.items.map((m) => "<th>" + m.nm + (m.cap ? "<br><span class=\"label-sm\">上限</span>" : "") + "</th>").join("") +
-      g.rates.map((r) => '<th>' + r.nm + '<br><span class="label-sm">自動</span></th>').join("")).join("") +
+    gs.map((g) => goalItems(g).map((m) => "<th>" + m.nm + (m.cap ? "<br><span class=\"label-sm\">上限</span>" : "") + "</th>").join("") +
+      goalRates(g).map((r) => '<th>' + r.nm + '<br><span class="label-sm">自動</span></th>').join("")).join("") +
     "</tr></thead><tbody>";
   MEMBERS.forEach((n) => {
     const t = raw(n);
     h += '<tr data-trow="' + esc(n) + '"><td class="l"><b>' + esc(n) + "</b></td>" +
-      gs.map((g) => g.items.map((m) => {
+      gs.map((g) => goalItems(g).map((m) => {
         const k = n + "|" + m.key;
         const v = TGT_DIRTY[k] !== undefined ? TGT_DIRTY[k] : n0(t[m.key]);
         return '<td><input type="number" min="0" step="' + (m.outs ? "0.1" : "1") + '" style="width:5.5em;text-align:right" data-tg="' +
           esc(k) + '" value="' + (v || "") + '"></td>';
-      }).join("") + g.rates.map((r) => '<td class="num calc" data-trate="' + r.key + '"></td>').join("")).join("") +
+      }).join("") + goalRates(g).map((r) => '<td class="num calc" data-trate="' + r.key + '"></td>').join("")).join("") +
       "</tr>";
   });
   $("#tgtTable").innerHTML = h + "</tbody>";
+  renderGoalEdit();
   $$("#tgtTable tr[data-trow]").forEach(updateTargetRates);
 }
+/* ── 目標の項目の編集（指導者・組織の管理者・オーナー） ──
+   GE は保存するまでの書きかけ。保存すると、チームのみんなの画面がこの項目になります */
+let GE = null;
+let GE_DIRTY = false;
+function renderGoalEdit() {
+  if (!canManage()) return;
+  if (!GE || !GE_DIRTY) GE = JSON.parse(JSON.stringify(TEAM_GOALS || { hide: [], add: [] }));
+  GE.hide = GE.hide || []; GE.add = GE.add || [];
+  const base = PROFILE.groups;
+  const groupOf = (a) => (base.some((g) => g.key === a.g) ? a.g : base[0].key);
+  $("#ge-list").innerHTML = base.map((g) =>
+    '<div class="sub">' + esc(g.nm) + "</div>" +
+    g.items.map((m) => {
+      const off = GE.hide.indexOf(m.key) >= 0;
+      return '<div class="ge-row' + (off ? " off" : "") + '"><label><input type="checkbox" data-gehide="' + m.key + '"' + (off ? "" : " checked") + '> <span class="ge-nm">' +
+        esc(m.nm) + "</span></label>" + (m.cap ? ' <span class="tag">上限</span>' : "") + "</div>";
+    }).join("") +
+    GE.add.filter((a) => groupOf(a) === g.key).map((a) =>
+      '<div class="ge-row"><span class="ge-nm"><b>' + esc(a.nm) + '</b></span> <span class="tag blue">追加</span>' + (a.cap ? ' <span class="tag">上限</span>' : "") +
+      '<span class="spacer" style="flex:1"></span><button type="button" class="btn danger small" data-gedel="' + esc(a.k) + '">削除</button></div>').join("")
+  ).join("");
+  $("#ge-grp").innerHTML = base.map((g) => '<option value="' + g.key + '">' + esc(g.nm) + "</option>").join("");
+  $("#ge-grpBox").hidden = base.length < 2;
+}
+$("#ge-list").addEventListener("change", (e) => {
+  const k = e.target.dataset.gehide;
+  if (!k) return;
+  GE.hide = GE.hide.filter((x) => x !== k);
+  if (!e.target.checked) GE.hide.push(k);
+  GE_DIRTY = true;
+  e.target.closest(".ge-row").classList.toggle("off", !e.target.checked);
+});
+$("#ge-list").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-gedel]");
+  if (!b) return;
+  const a = GE.add.find((x) => x.k === b.dataset.gedel);
+  if (!a || !confirm("項目「" + a.nm + "」を削除します。保存すると、この項目の目標と入力欄がなくなります。よろしいですか？")) return;
+  GE.add = GE.add.filter((x) => x !== a);
+  GE_DIRTY = true;
+  renderGoalEdit();
+});
+$("#ge-add").addEventListener("click", () => {
+  const nm = $("#ge-name").value.trim();
+  if (!nm) { showErr("項目の名前を入れてください"); return; }
+  const all = PROFILE.groups.reduce((x, g) => x.concat(g.items.map((m) => m.nm)), []).concat(GE.add.map((a) => a.nm));
+  if (all.indexOf(nm) >= 0) { showErr("「" + nm + "」はもうあります"); return; }
+  /* 足した項目の名前は x1, x2… */
+  const n = GE.add.reduce((m, a) => Math.max(m, Number(a.k.slice(1)) || 0), 0) + 1;
+  GE.add.push({ k: "x" + n, nm, cap: $("#ge-cap").checked, g: $("#ge-grp").value || PROFILE.groups[0].key });
+  $("#ge-name").value = ""; $("#ge-cap").checked = false;
+  GE_DIRTY = true;
+  showErr("");
+  renderGoalEdit();
+});
+$("#ge-save").addEventListener("click", async () => {
+  if (await call("saveGoals", { hide: GE.hide, add: GE.add }, "目標の項目を保存しました")) {
+    GE_DIRTY = false;
+    renderGoalEdit();
+  }
+});
+
 /* 入力中の目標から、率をその場で計算します */
 function updateTargetRates(tr) {
   const n = tr.dataset.trow;
@@ -1963,39 +2047,63 @@ async function call(fn, arg, msg) {
    競技の切り替え。チームに入るたびに、その競技の項目・表記にします
    ══════════════════════════════════════════ */
 let PROFILE_READY = false;
+let PROFILE_SIG = "";
+/* チームで目標から外した項目と、足した項目 { hide: [項目], add: [{ k, nm, cap, g }] } */
+let TEAM_GOALS = { hide: [], add: [] };
+let CUSTOM_KEYS = [];
+/* 目標の画面で使う項目と率（外した項目と、それを使う率は出しません） */
+const goalItems = (g) => g.items.filter((m) => !m.hide);
+const goalRates = (g) => g.rates.filter((r) => r.deps.every((k) => !g.items.some((m) => m.key === k && m.hide)));
 function setProfile(sport) {
   const next = profileOf(sport);
   const changed = next !== PROFILE;
   PROFILE = next;
   ROLES = PROFILE.roles;
-  GROUPS = PROFILE.groups;
   ITEM_SUMS = PROFILE.vol;
+  /* 競技の項目に、チームの変更（外した項目・足した項目）を重ねます */
+  const hide = TEAM_GOALS.hide || [], add = TEAM_GOALS.add || [];
+  GROUPS = PROFILE.groups.map((g, gi) => {
+    const mine = add.filter((a) => a.g === g.key || (gi === 0 && !PROFILE.groups.some((x) => x.key === a.g)))
+      .map((a) => ({ key: a.k, nm: a.nm, cap: !!a.cap, custom: true }));
+    const keys = mine.map((m) => m.key);
+    return Object.assign({}, g, {
+      items: g.items.concat(mine).map((m) => Object.assign({}, m, { hide: hide.indexOf(m.key) >= 0 })),
+      custom: mine,
+      active: (l) => g.active(l) || keys.some((k) => n0(l[k]) > 0)
+    });
+  });
   const items = GROUPS.reduce((a, g) => a.concat(g.items), []);
-  GOAL_KEYS = items.map((m) => m.key);
-  NUM_GAME = GOAL_KEYS.slice();
+  NUM_GAME = items.map((m) => m.key);
+  GOAL_KEYS = items.filter((m) => !m.hide).map((m) => m.key);
+  CUSTOM_KEYS = items.filter((m) => m.custom).map((m) => m.key);
   OUTS_KEYS = items.filter((m) => m.outs).map((m) => m.key);
   if (changed) { STAT_SORT = {}; RES_SORT = { key: "", dir: -1 }; }
-  /* 同じ競技のまま保存し直したときは、書きかけの入力を消さないよう作り直しません */
-  if (!changed && PROFILE_READY) return;
+  /* 同じ競技・同じ項目のまま保存し直したときは、書きかけの入力を消さないよう作り直しません */
+  const sig = PROFILE.key + "|" + JSON.stringify(TEAM_GOALS);
+  if (sig === PROFILE_SIG && PROFILE_READY) return;
   PROFILE_READY = true;
+  PROFILE_SIG = sig;
 
   /* ノートを書く：ポジションのチェック、試合の成績の欄、練習内容の候補 */
   $("#n-roles").innerHTML = ROLES.map((r) => '<label><input type="checkbox" value="' + esc(r) + '"> ' + esc(r) + "</label>").join("");
   $("#n-roles").style.gridTemplateColumns = "repeat(" + Math.min(ROLES.length, 4) + ",1fr)";
   $("#n-bbStats").hidden = !isBaseball();
-  $("#n-sportStats").innerHTML = isBaseball() ? "" : GROUPS.map((g) =>
-    '<div data-grp="' + g.key + '"><div class="sub">' + esc(g.formTitle) + '</div><div class="fields">' +
-    g.items.map((m) => '<label class="f" for="n-' + m.key + '">' + esc(m.nm) +
+  /* 野球は決まった欄のあとに、足した項目だけを出します */
+  $("#n-sportStats").innerHTML = GROUPS.filter((g) => !isBaseball() || g.custom.length).map((g) =>
+    '<div data-grp="' + g.key + '"><div class="sub">' + esc(g.formTitle) + (isBaseball() ? "（追加の項目）" : "") + '</div><div class="fields">' +
+    (isBaseball() ? g.custom : g.items).map((m) => '<label class="f" for="n-' + m.key + '">' + esc(m.nm) +
       '<input id="n-' + m.key + '" type="number" min="0" placeholder="0"></label>').join("") + "</div></div>").join("");
   $("#menuList").innerHTML = PROFILE.menu.map((m) => '<option value="' + esc(m) + '">').join("");
 
   /* 説明の文。上限の項目と、少ないほど良い項目の名前を並べます */
-  const capNames = items.filter((m) => m.cap).map((m) => m.nm.replace(/（.*）/, ""));
-  const lowNames = capNames.concat(GROUPS.reduce((a, g) => a.concat(g.rates.filter((r) => !r.hi).map((r) => r.nm)), []));
+  const shown = items.filter((m) => !m.hide);
+  const capNames = shown.filter((m) => m.cap).map((m) => m.nm.replace(/（.*）/, ""));
+  const lowNames = capNames.concat(GROUPS.reduce((a, g) => a.concat(goalRates(g).filter((r) => !r.hi).map((r) => r.nm)), []));
   $$(".capNote").forEach((e) => (e.textContent = capNames.length ? capNames.join("・") + "は「上限」で、超えると赤になります。" : ""));
   $("#tgtCapNote").textContent = capNames.length ? capNames.join("・") + "は「ここまでに抑える」上限として入れてください。" : "";
   $("#lowNote").textContent = lowNames.length ? lowNames.join("・") + "は、少ないほうが上位です。" : "";
-  $("#tgtRateNote").textContent = GROUPS.map((g) => g.rates.map((r) => r.nm).join("・")).join("、") + "は、入れた数字から自動で計算します。";
+  const rateNames = GROUPS.map((g) => goalRates(g).map((r) => r.nm).join("・")).filter(Boolean);
+  $("#tgtRateNote").textContent = rateNames.length ? rateNames.join("、") + "は、入れた数字から自動で計算します。" : "";
   const vol = ITEM_SUMS.filter((v) => !v.km).map((v) => "「" + v.words[0] + "」は量の数字（" + v.unit + "）");
   $("#practiceNote").textContent = PROFILE.practiceNote ||
     vol.concat(ITEM_SUMS.some((v) => v.km) ? ["「ランニング」は km の数字"] : []).join("、") + "が、練習量の集計に入ります。";
@@ -2046,8 +2154,12 @@ $("#saveNote").addEventListener("click", async () => {
   const stats = {};
   NUM_GAME.forEach((k) => (stats[k] = use(k) ? n0(val(k)) : ""));
   /* 野球の成績は決まった列に、ほかの競技の成績は stats にまとめて送ります */
-  if (isBaseball()) Object.assign(o, stats);
-  else o.stats = JSON.stringify(stats);
+  if (isBaseball()) {
+    /* 野球は決まった列に。足した項目だけ stats に入れます */
+    const extra = {};
+    Object.keys(stats).forEach((k) => (CUSTOM_KEYS.indexOf(k) >= 0 ? (extra[k] = stats[k]) : (o[k] = stats[k])));
+    o.stats = JSON.stringify(extra);
+  } else o.stats = JSON.stringify(stats);
   TEXT_GAME.forEach((k) => (o[k] = game ? val(k) : ""));
   if (game && PROFILE.check) {
     const bad = PROFILE.check((k) => n0(stats[k]));
@@ -2233,6 +2345,10 @@ async function loadSettings() {
     const s = await api("getSettings");
     $("#st-name").value = s.name;
     $("#st-code").value = s.code + (s.sport ? "（" + s.sport + "）" : "");
+    /* 競技が決まっていない前の版のチームは、ここで競技を選べます */
+    $("#st-sportBox").hidden = !(s.sports && s.sports.length);
+    $("#st-sport").innerHTML = '<option value="">選ぶ（いまは野球として表示）</option>' +
+      (s.sports || []).map((x) => '<option value="' + esc(x.code) + '">' + esc(x.code + "　" + x.name) + "</option>").join("");
     $("#st-pass").value = ""; $("#st-spass").value = "";
     $("#st-members").innerHTML = s.members.map((n) => nameRow(n, n)).join("");
     $("#st-staff").innerHTML = s.staff.map((n) => nameRow(n, n)).join("");
@@ -2269,6 +2385,7 @@ $("#st-save").addEventListener("click", async () => {
     const r = await api("saveSettings", {
       name: $("#st-name").value.trim(), code: $("#st-code").value.trim(),
       password: $("#st-pass").value, staffPassword: $("#st-spass").value,
+      sport: $("#st-sportBox").hidden ? "" : $("#st-sport").value,
       members, staff, menus
     });
     setToken(r.token);
@@ -2679,14 +2796,12 @@ function normLog(l) {
   TEXT_GAME.concat(["report", "comment", "commentBy", "kind", "tstart", "tend"]).forEach((k) => (o[k] = o[k] == null ? "" : String(o[k])));
   o.mins = n0(o.mins);
   o.items = parseItems(o.items);
-  /* 野球以外の競技の試合の成績は stats にまとめて入っているので、ふつうの項目として読み出します */
-  if (!isBaseball()) {
-    let st = {};
-    try { st = JSON.parse(o.stats || "{}") || {}; } catch (e) {}
-    NUM_GAME.forEach((k) => (o[k] = n0(st[k])));
-    /* 練習量は、練習内容の言葉から数えます */
-    Object.assign(o, itemSums(o.items));
-  }
+  /* 野球以外の競技の成績と、チームで足した項目は stats にまとめて入っているので、ふつうの項目として読み出します */
+  let st = {};
+  try { st = JSON.parse(o.stats || "{}") || {}; } catch (e) {}
+  (isBaseball() ? CUSTOM_KEYS : NUM_GAME).forEach((k) => (o[k] = n0(st[k])));
+  /* 野球以外の練習量は、練習内容の言葉から数えます */
+  if (!isBaseball()) Object.assign(o, itemSums(o.items));
   o.roles = String(o.roles || "").split(",").filter((r) => ROLES.indexOf(r) >= 0);
   if (KINDS.indexOf(o.kind) < 0) o.kind = "練習";
   o.date = String(o.date || "");
@@ -2700,6 +2815,7 @@ function apply(d) {
   if (d && d.team) {
     TEAM = d.team;
     /* チームの競技に合わせて、画面の項目を切り替えます（ノートを読む前に） */
+    TEAM_GOALS = d.goals || { hide: [], add: [] };
     setProfile(TEAM.sport);
     /* オーナーと組織の管理者が「チーム一覧」に戻れるよう、チームの組織を覚えます */
     if (ROLE === "owner" || ROLE === "orgadmin") setSel(TEAM.orgId, TEAM.id);
