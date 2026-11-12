@@ -1,0 +1,2266 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Dreaming</title>
+<style>
+:root{
+  --bg:#F2F4F8; --surface:#FFFFFF; --ink:#152036; --muted:#5B6577; --line:#DCE1EA;
+  --accent:#163A6B; --accent-ink:#FFFFFF; --accent-soft:#E3EAF5;
+  --shu:#C8442F; --shu-soft:#FBE7E3; --ok:#2E7D4F; --ok-soft:#E2F2E8;
+  --warn:#A8670F; --warn-soft:#FBF0DC;
+  --r:10px;
+  color-scheme:light;
+}
+*,*::before,*::after{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg); color:var(--ink); font-size:14px; line-height:1.65;
+  font-family:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Hiragino Kaku Gothic ProN","Noto Sans JP","Yu Gothic",Meiryo,sans-serif;
+  -webkit-text-size-adjust:100%; padding-bottom:env(safe-area-inset-bottom,0px);
+}
+.num{font-variant-numeric:tabular-nums}
+
+header{position:sticky;top:0;z-index:20;background:var(--accent);color:#fff;padding:9px 14px;border-bottom:3px solid var(--shu)}
+.hrow{display:flex;align-items:center;gap:10px;flex-wrap:wrap;max-width:1180px;margin:0 auto}
+.brand{display:flex;align-items:baseline;gap:8px;margin-right:auto}
+.brand h1{margin:0;font-size:19px;font-weight:800;letter-spacing:.04em;font-style:italic}
+.brand span{font-size:11px;opacity:.75}
+header select{width:auto;background:rgba(255,255,255,.15);color:#fff;border:1px solid rgba(255,255,255,.4);font-weight:700}
+header select option,header select optgroup{color:#152036}
+.pill{font-size:11px;border-radius:99px;padding:3px 10px;background:rgba(255,255,255,.18)}
+.pill.ok{background:#D8F0E2;color:#1C5C38}
+.pill.bad{background:#FBE7E3;color:#8E2A1B}
+.pill.demo{background:#FBF0DC;color:#7A4A08}
+
+nav.tabs{position:sticky;top:48px;z-index:19;background:var(--surface);border-bottom:1px solid var(--line);overflow-x:auto}
+nav.tabs .inner{display:flex;gap:2px;max-width:1180px;margin:0 auto;padding:0 10px}
+nav.tabs button{background:none;border:0;border-bottom:3px solid transparent;color:var(--muted);
+  font:inherit;font-weight:700;font-size:13px;padding:11px 14px;white-space:nowrap;cursor:pointer}
+nav.tabs button[aria-selected=true]{color:var(--accent);border-bottom-color:var(--accent)}
+
+main{max-width:1180px;margin:0 auto;padding:16px 14px 60px}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:14px}
+.panel h3{margin:0 0 10px;font-size:14px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.spacer{flex:1}
+.note{margin:0;color:var(--muted);font-size:12px;line-height:1.7}
+.label-sm{font-size:11px;font-weight:400;color:var(--muted)}
+.sub{font-size:12px;font-weight:700;color:var(--accent);margin:14px 0 6px;border-left:3px solid var(--shu);padding-left:7px}
+
+input,select,textarea{font:inherit;font-size:15px;color:var(--ink);background:#fff;border:1px solid var(--line);
+  border-radius:8px;padding:8px 10px;width:100%;min-width:0}
+textarea{resize:vertical;min-height:62px;line-height:1.6}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+label.f{display:block;font-size:12px;font-weight:600;color:var(--muted)}
+label.f input,label.f select,label.f textarea{margin-top:4px}
+.btn{font:inherit;font-weight:700;font-size:13px;border-radius:8px;padding:9px 14px;cursor:pointer;
+  background:var(--accent);color:var(--accent-ink);border:1px solid var(--accent)}
+.btn:hover{opacity:.9}
+.btn.ghost{background:#fff;color:var(--accent)}
+.btn.small{font-size:12px;padding:5px 10px}
+.btn.danger{background:#fff;color:var(--shu);border-color:#E8BDB4}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.fields{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));align-items:end}
+.fields.wide{grid-template-columns:repeat(auto-fit,minmax(240px,1fr));align-items:start}
+.actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-top:12px}
+
+.tscroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+table.t{width:100%;border-collapse:collapse;font-size:13px;min-width:560px}
+table.t th,table.t td{padding:8px 9px;border-bottom:1px solid var(--line);text-align:right;white-space:nowrap}
+table.t th{background:var(--accent-soft);color:var(--accent);font-size:12px}
+table.t th.l,table.t td.l{text-align:left}
+table.t tbody tr:hover{background:#F8FAFD}
+.cell-ok{color:var(--ok);font-weight:700}
+.cell-warn{color:var(--warn);font-weight:700}
+.cell-bad{color:var(--shu);font-weight:700}
+
+.tiles{display:grid;gap:10px;grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}
+.tile{background:#F8FAFD;border:1px solid var(--line);border-radius:var(--r);padding:11px 12px}
+.tile .label-sm{display:block}
+.tile b{display:block;font-size:22px;line-height:1.3;font-variant-numeric:tabular-nums}
+.tile .note{font-size:11px}
+.mbar{height:7px;border-radius:99px;background:#E7ECF3;overflow:hidden;margin-top:6px}
+.mbar i{display:block;height:100%;background:var(--accent)}
+.mbar.ok i{background:var(--ok)} .mbar.warn i{background:var(--warn)} .mbar.bad i{background:var(--shu)}
+
+.tag{font-size:11px;font-weight:700;border-radius:5px;padding:1px 7px;background:#EEF2F7;color:var(--muted);white-space:nowrap}
+.tag.ok{background:var(--ok-soft);color:var(--ok)}
+.tag.bad{background:var(--shu-soft);color:var(--shu)}
+.tag.blue{background:var(--accent-soft);color:var(--accent)}
+
+.cards{display:grid;gap:10px}
+.card{border:1px solid var(--line);border-radius:var(--r);padding:12px 14px;background:#FBFCFE}
+.card-h{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:6px}
+.card dl{margin:0;display:grid;grid-template-columns:7.5em 1fr;gap:4px 10px;font-size:13px}
+.card dt{color:var(--muted);font-size:12px;font-weight:700}
+.card dd{margin:0;white-space:pre-wrap;word-break:break-word}
+.cmt{margin-top:8px;background:var(--accent-soft);border-radius:8px;padding:8px 10px;font-size:13px;white-space:pre-wrap}
+.cmt .label-sm{display:block;color:var(--accent);font-weight:700}
+.cmt-edit{margin-top:8px;display:flex;gap:8px;align-items:flex-end}
+.cmt-edit textarea{min-height:44px}
+
+.empty{padding:24px 10px;text-align:center;color:var(--muted);font-size:13px}
+.err{background:var(--shu-soft);color:var(--shu);border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px;font-weight:700}
+.okmsg{background:var(--ok-soft);color:var(--ok);border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px;font-weight:700}
+.demo-box{background:var(--warn-soft);color:#7A4A08;border-radius:var(--r);padding:10px 12px;font-size:12px;margin-bottom:12px}
+.irow{display:grid;grid-template-columns:1.3fr .9fr 1.5fr 36px;gap:6px;align-items:center;margin-bottom:6px}
+.irow.ihead span{font-size:12px;font-weight:600;color:var(--muted)}
+.irow .x{width:36px;height:38px;padding:0;border-radius:8px;border:1px solid var(--line);background:#fff;color:var(--muted);font-size:16px;cursor:pointer}
+@media(max-width:560px){
+  .irow{grid-template-columns:1.3fr 1fr 36px;border-bottom:1px dashed var(--line);padding-bottom:6px}
+  .irow .im{grid-column:1/-1;order:4}
+  .irow.ihead{display:none}
+}
+table.items{width:100%;border-collapse:collapse;font-size:13px;margin:4px 0 2px}
+table.items th,table.items td{padding:5px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.items th{font-size:11px;color:var(--muted);font-weight:700;background:#F1F4F9}
+table.items td.q{white-space:nowrap}
+.vsel{display:inline-flex;gap:6px}
+.vsel label{display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:var(--muted);
+  border:1px solid var(--line);border-radius:99px;padding:4px 10px;cursor:pointer;background:#fff}
+.vsel input{width:15px;height:15px;margin:0;accent-color:var(--accent)}
+.vsel label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.tile.rate{background:#fff;border-style:dashed}
+table.t td.calc{background:#F6F8FB;color:var(--accent);font-weight:700}
+table.t td.calc.cell-ok{color:var(--ok)} table.t td.calc.cell-bad{color:var(--shu)}
+/* 1位・2位・3位 */
+.rk1,table.t td.rk1{color:#B7791F!important;font-weight:800}
+.rk2,table.t td.rk2{color:#2B6CB0!important;font-weight:800}
+.rk3,table.t td.rk3{color:#9C4221!important;font-weight:800}
+table.t td.rk1::before,table.t td.rk2::before,table.t td.rk3::before{font-size:10px;font-weight:700;margin-right:3px;vertical-align:1px}
+table.t td.rk1::before{content:"1位"} table.t td.rk2::before{content:"2位"} table.t td.rk3::before{content:"3位"}
+.seg{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:4px}
+.seg button{font:inherit;font-size:15px;font-weight:700;padding:10px 6px;border-radius:8px;cursor:pointer;
+  background:#fff;color:var(--muted);border:1px solid var(--line)}
+.seg button[aria-pressed=true]{background:var(--accent);color:#fff;border-color:var(--accent)}
+.seg button[data-kind="試合"][aria-pressed=true]{background:var(--shu);border-color:var(--shu)}
+.roles{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.roles label{display:flex;align-items:center;justify-content:center;gap:6px;padding:7px 6px;border:1px solid var(--line);
+  border-radius:8px;background:#fff;font-size:14px;font-weight:700;color:var(--muted);cursor:pointer}
+.roles input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
+.roles label:has(input:checked){background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+details summary{cursor:pointer;font-size:12px;font-weight:700;color:var(--accent);margin:14px 0 6px}
+.hteam{font-size:12px;font-weight:700;opacity:.9}
+.hwho{display:inline-flex;align-items:center;gap:6px}
+.hbtn{font:inherit;font-size:11px;font-weight:700;color:#fff;background:transparent;border:1px solid rgba(255,255,255,.45);
+  border-radius:99px;padding:3px 10px;cursor:pointer}
+.hbtn:hover{background:rgba(255,255,255,.12)}
+.pill.role{background:#fff;color:var(--accent);font-weight:700}
+.pill.role.staff{background:#FBF0DC;color:#7A4A08}
+.pill.role.owner{background:var(--shu);color:#fff}
+.login{max-width:400px;margin:40px auto}
+.login-title{margin:0 0 6px;font-size:26px;font-style:italic;color:var(--accent)}
+.login-title span{font-size:13px;font-style:normal;color:var(--muted);margin-left:6px}
+.login-links{display:flex;justify-content:space-between;gap:10px;margin:10px 0 4px}
+.linkbtn{font:inherit;font-size:13px;font-weight:700;color:var(--accent);background:none;border:0;padding:4px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+dl.help{margin:0 0 6px;font-size:13px}
+dl.help dt{font-weight:700;color:var(--accent);margin-top:8px}
+dl.help dd{margin:2px 0 0;color:var(--ink)}
+.inq{border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:8px;background:#FBFCFE;font-size:13px}
+.inq .meta{font-size:12px;color:var(--muted)}
+.nrow{display:grid;grid-template-columns:1fr auto;gap:6px;margin-bottom:6px}
+@media(max-width:560px){ nav.tabs .inner{padding:0 4px} nav.tabs button{padding:11px 8px;font-size:12.5px} }
+@media(max-width:720px){ nav.tabs{top:47px} .card dl{grid-template-columns:1fr} .card dt{margin-top:4px} }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="hrow">
+    <div class="brand"><h1>Dreaming</h1></div>
+    <span class="hteam" id="teamTxt"></span>
+    <span class="hwho" id="whoBox" hidden>
+      <span class="label-sm" style="color:rgba(255,255,255,.8)">あなた</span>
+      <select id="who" style="max-width:10em"></select>
+    </span>
+    <span class="pill" id="rolePill" hidden></span>
+    <button class="hbtn" id="staffBtn" hidden>指導者ログイン</button>
+    <button class="hbtn" id="teamsBtn" hidden>チーム一覧</button>
+    <button class="hbtn" id="orgsBtn" hidden>組織一覧</button>
+    <button class="hbtn" id="logoutBtn" hidden>ログアウト</button>
+    <span class="pill" id="modePill">接続中…</span>
+  </div>
+</header>
+
+<nav class="tabs" id="appNav" hidden>
+  <div class="inner">
+    <button data-tab="my" aria-selected="true">マイノート</button>
+    <button data-tab="input" aria-selected="false">ノートを書く</button>
+    <button data-tab="games" aria-selected="false">試合成績</button>
+    <button data-tab="team" aria-selected="false">チーム</button>
+    <button data-tab="me" aria-selected="false">個人</button>
+    <button data-tab="target" aria-selected="false">目標設定</button>
+    <button data-tab="settings" aria-selected="false" class="staffOnly" hidden>設定</button>
+  </div>
+</nav>
+
+<main>
+  <div id="demo" class="demo-box" hidden></div>
+  <div id="err" class="err" hidden></div>
+  <div id="msg" class="okmsg" hidden></div>
+
+  <!-- ══ ログイン ══ -->
+  <div id="gate" hidden>
+    <div class="panel login" id="loginBox">
+      <h2 class="login-title">Dreaming</h2>
+      <label class="f" for="g-org">組織コード<input id="g-org" type="text" autocomplete="organization" autocapitalize="off" spellcheck="false"></label>
+      <label class="f" for="g-code" style="margin-top:10px">チームコード<input id="g-code" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="組織の管理者は空欄"></label>
+      <label class="f" for="g-pass" style="margin-top:10px">パスワード<input id="g-pass" type="password" autocomplete="current-password"></label>
+      <div class="login-links">
+        <button type="button" class="linkbtn" id="toSignup">新規登録</button>
+        <button type="button" class="linkbtn" id="toForgot">お忘れの方へ</button>
+      </div>
+      <button class="btn" id="loginBtn" style="width:100%;margin-top:6px">ログイン</button>
+      <p class="note" style="margin-top:10px">部員はチームのパスワード、指導者は指導者用パスワードでログインします。組織の管理者は、チームコードを空欄にして管理者パスワードでログインします。</p>
+    </div>
+
+    <!-- 新規登録：組織の管理者になる申し込み -->
+    <div class="panel login" id="signupBox" hidden>
+      <h3>新規登録 <span class="label-sm">組織の管理者として申し込みます</span></h3>
+      <p class="note" style="margin-bottom:10px">
+        学校や団体などの「組織」を登録します。運営が確認して承認すると、組織コードと、ここで決めた管理者パスワードでログインできるようになり、
+        組織の中で部活動などのチームを自由に作れます。承認の連絡は、ご入力の連絡先にお送りします。
+      </p>
+      <label class="f" for="su-org">組織名<input id="su-org" type="text" placeholder="例：桜高校"></label>
+      <label class="f" for="su-code" style="margin-top:10px">希望する組織コード<input id="su-code" type="text" autocapitalize="off" spellcheck="false" placeholder="英数字4〜20文字（例：sakura-hs）"></label>
+      <label class="f" for="su-name" style="margin-top:10px">管理者のお名前<input id="su-name" type="text"></label>
+      <label class="f" for="su-contact" style="margin-top:10px">連絡先（メールアドレスまたは電話番号）<input id="su-contact" type="text" autocomplete="email"></label>
+      <label class="f" for="su-pass" style="margin-top:10px">管理者パスワード（4文字以上）<input id="su-pass" type="password" autocomplete="new-password"></label>
+      <label class="f" for="su-pass2" style="margin-top:10px">確認のためもう一度<input id="su-pass2" type="password" autocomplete="new-password"></label>
+      <label class="f" for="su-note" style="margin-top:10px">ひとこと（任意）<textarea id="su-note" rows="2" placeholder="使いたい部活動など"></textarea></label>
+      <button class="btn" id="signupBtn" style="width:100%;margin-top:14px">申し込む</button>
+      <div class="login-links"><button type="button" class="linkbtn" data-back>ログイン画面にもどる</button></div>
+    </div>
+
+    <!-- お忘れの方へ -->
+    <div class="panel login" id="forgotBox" hidden>
+      <h3>お忘れの方へ</h3>
+      <dl class="help">
+        <dt>部員の方</dt>
+        <dd>組織コード・チームコード・チームのパスワードは、チームの指導者に聞いてください。<br>
+          「個人」ページのパスコードを忘れたときは、指導者にリセットしてもらえます。</dd>
+        <dt>指導者の方</dt>
+        <dd>指導者用パスワードは、組織の管理者が「チーム一覧 → 開く → 設定」で新しく決められます。組織の管理者に連絡してください。</dd>
+        <dt>組織の管理者の方</dt>
+        <dd>下の問い合わせフォームから運営にご連絡ください。本人であることを確認のうえ、新しいパスワードをお知らせします。</dd>
+      </dl>
+      <div class="sub">問い合わせ</div>
+      <label class="f" for="fg-org">組織コード（わかれば）<input id="fg-org" type="text" autocapitalize="off" spellcheck="false"></label>
+      <label class="f" for="fg-team" style="margin-top:10px">チームコード（わかれば）<input id="fg-team" type="text" autocapitalize="off" spellcheck="false"></label>
+      <label class="f" for="fg-name" style="margin-top:10px">お名前<input id="fg-name" type="text"></label>
+      <label class="f" for="fg-contact" style="margin-top:10px">連絡先（メールアドレスまたは電話番号）<input id="fg-contact" type="text" autocomplete="email"></label>
+      <label class="f" for="fg-msg" style="margin-top:10px">内容<textarea id="fg-msg" rows="3" placeholder="例：管理者パスワードを忘れました"></textarea></label>
+      <button class="btn" id="forgotBtn" style="width:100%;margin-top:14px">送る</button>
+      <p class="note" style="margin-top:8px">問い合わせは、運営と、その組織の管理者に届きます。</p>
+      <div class="login-links"><button type="button" class="linkbtn" data-back>ログイン画面にもどる</button></div>
+    </div>
+  </div>
+
+  <!-- ══ オーナー：申し込み・問い合わせ・組織一覧 ══ -->
+  <div id="ownerHome" hidden>
+    <div class="panel">
+      <h3>新規登録の申し込み <span class="label-sm">承認すると組織ができ、申し込みのパスワードで管理者がログインできます</span></h3>
+      <div id="reqList"></div>
+    </div>
+    <div class="panel">
+      <h3>問い合わせ <span class="label-sm">「お忘れの方へ」から届いたもの</span></h3>
+      <div id="ownerInq"></div>
+    </div>
+    <div class="panel">
+      <h3>組織一覧 <span class="label-sm">オーナーとしてログインしています</span></h3>
+      <div class="tscroll"><table class="t" id="orgList"></table></div>
+    </div>
+    <div class="panel">
+      <h3>組織を作る <span class="label-sm">申し込みを通さずに、運営が直接作るとき</span></h3>
+      <div class="fields">
+        <label class="f" for="no-name">組織名<input id="no-name" type="text" placeholder="例：桜高校"></label>
+        <label class="f" for="no-code">組織コード<input id="no-code" type="text" autocapitalize="off" placeholder="英数字4〜20文字"></label>
+        <label class="f" for="no-admin">管理者のお名前<input id="no-admin" type="text"></label>
+        <label class="f" for="no-contact">連絡先<input id="no-contact" type="text"></label>
+        <label class="f" for="no-pass">管理者パスワード<input id="no-pass" type="text" autocomplete="off" placeholder="4文字以上"></label>
+      </div>
+      <div class="actions"><span class="spacer"></span><button class="btn" id="createOrgBtn">組織を作る</button></div>
+    </div>
+  </div>
+
+  <!-- ══ 組織：チーム一覧・設定（組織の管理者とオーナー） ══ -->
+  <div id="orgHome" hidden>
+    <div class="panel">
+      <h3><span id="oh-title"></span> のチーム <span class="label-sm">組織の管理者の画面です</span></h3>
+      <div class="tscroll"><table class="t" id="teamList"></table></div>
+    </div>
+    <div class="panel">
+      <h3>チームを作る</h3>
+      <div class="fields">
+        <label class="f" for="nt-name">チーム名<input id="nt-name" type="text" placeholder="例：野球部"></label>
+        <label class="f" for="nt-code">チームコード<input id="nt-code" type="text" placeholder="英数字2〜20文字（例：baseball）" autocapitalize="off"></label>
+        <label class="f" for="nt-pass">チームのパスワード<input id="nt-pass" type="text" autocomplete="off" placeholder="部員用・4文字以上"></label>
+        <label class="f" for="nt-spass">指導者用パスワード<input id="nt-spass" type="text" autocomplete="off" placeholder="4文字以上"></label>
+      </div>
+      <div class="fields wide" style="margin-top:10px">
+        <label class="f" for="nt-members">部員（1行に1人）<textarea id="nt-members" rows="4" placeholder="あとから「設定」でも直せます"></textarea></label>
+        <label class="f" for="nt-staff">指導者（1行に1人）<textarea id="nt-staff" rows="4">監督</textarea></label>
+      </div>
+      <div class="actions"><span class="spacer"></span><button class="btn" id="createTeamBtn">チームを作る</button></div>
+    </div>
+    <div class="panel">
+      <h3>問い合わせ <span class="label-sm">この組織あての「お忘れの方へ」</span></h3>
+      <div id="orgInq"></div>
+    </div>
+    <div class="panel">
+      <h3>組織の設定</h3>
+      <div class="fields">
+        <label class="f" for="os-name">組織名<input id="os-name" type="text"></label>
+        <label class="f" for="os-code">組織コード（ログイン用）<input id="os-code" type="text" autocapitalize="off" spellcheck="false"></label>
+        <label class="f" for="os-admin">管理者のお名前<input id="os-admin" type="text"></label>
+        <label class="f" for="os-contact">連絡先<input id="os-contact" type="text"></label>
+        <label class="f" for="os-pass">新しい管理者パスワード<input id="os-pass" type="text" autocomplete="off" placeholder="変えるときだけ入れる"></label>
+      </div>
+      <p class="note" style="margin-top:8px">組織コードを変えると、組織の全員が新しい組織コードでログインすることになります。</p>
+      <div class="actions"><span class="spacer"></span><button class="btn" id="saveOrgBtn">組織の設定を保存</button></div>
+    </div>
+  </div>
+
+  <!-- ══ 指導者ログイン（部員としてログインしている端末で） ══ -->
+  <div class="panel" id="staffBox" hidden>
+    <h3>指導者ログイン</h3>
+    <div class="fields" style="max-width:480px">
+      <label class="f" for="s-pass">指導者用パスワード<input id="s-pass" type="password" autocomplete="off"></label>
+      <button class="btn" id="staffLoginBtn">ログイン</button>
+      <button class="btn ghost" id="staffCancel">やめる</button>
+    </div>
+  </div>
+
+  <div id="appMain" hidden>
+  <!-- ══ マイノート ══ -->
+  <section data-sec="my">
+    <div class="panel so" hidden>
+      <p class="note">指導者として選んでいます。<b>チーム</b>タブで部員のノートを読んで、コメントを書けます。</p>
+    </div>
+
+    <div class="po">
+      <div class="panel">
+        <h3><span id="myName"></span> のノート
+          <span class="tag blue" id="streak"></span>
+          <span class="spacer"></span>
+          <input type="month" id="myMonth" style="width:auto">
+        </h3>
+        <div class="sub">練習量</div>
+        <div class="tiles" id="myWork"></div>
+        <div class="sub">からだ</div>
+        <div class="tiles" id="myBody"></div>
+      </div>
+
+      <div class="panel">
+        <h3>目標に対する進み具合 <span class="label-sm" id="paceTxt"></span>
+          <span class="spacer"></span><span class="vsel"></span>
+        </h3>
+        <div id="myGoal"></div>
+        <p class="note" style="margin-top:8px">
+          達成率の色は、月の進み具合に追いついているかで判定しています。月初に赤くなることはありません。
+          被安打・被本塁打・与四死球・自責点は「上限」で、超えると赤になります。
+        </p>
+      </div>
+
+      <div class="panel">
+        <h3><span id="myYear"></span>年の試合成績</h3>
+        <div class="tiles" id="myGames"></div>
+      </div>
+
+      <div class="panel">
+        <h3>ノート <span class="label-sm">この月に書いたノート</span></h3>
+        <div class="cards" id="myNotes"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ ノートを書く ══ -->
+  <section data-sec="input" hidden>
+    <div class="panel so" hidden>
+      <p class="note">指導者はノートを書く必要はありません。部員を選ぶと、その部員としてノートを書けます。</p>
+    </div>
+
+    <div class="po">
+      <div class="panel" id="noteForm">
+        <h3>ノートを書く <span class="label-sm" id="inputWho"></span>
+          <span class="spacer"></span><span class="tag" id="n-state"></span>
+        </h3>
+        <div class="fields">
+          <label class="f" for="n-date">日付<input id="n-date" type="date"></label>
+          <div style="grid-column:1/-1;min-width:0">
+            <span class="f" style="display:block;font-size:12px;font-weight:600;color:var(--muted)">区分</span>
+            <div class="seg" id="n-kind" role="group" aria-label="区分"></div>
+            <div class="roles" id="n-roles" role="group" aria-label="ポジション"></div>
+          </div>
+        </div>
+
+        <div class="sub">練習時間</div>
+        <div class="fields">
+          <label class="f" for="n-tstart">はじめ<input id="n-tstart" type="time" step="300"></label>
+          <label class="f" for="n-tend">おわり<input id="n-tend" type="time" step="300"></label>
+          <div class="f" style="align-self:end;padding-bottom:9px"><span class="tag blue" id="n-tlen">—</span></div>
+        </div>
+
+        <div class="sub">からだ</div>
+        <div class="fields">
+          <label class="f" for="n-cond">体調<select id="n-cond"></select></label>
+          <label class="f" for="n-sleep">睡眠（時間）<input id="n-sleep" type="number" min="0" max="24" step="0.5" placeholder="7"></label>
+        </div>
+
+        <!-- 練習・自主練 -->
+        <div data-for="練習 自主練">
+          <div class="sub">練習内容</div>
+          <div class="irow ihead"><span>練習内容</span><span>量</span><span>備考</span><span></span></div>
+          <div id="n-items"></div>
+          <datalist id="menuList"></datalist>
+          <div class="actions" style="margin-top:8px">
+            <button type="button" class="btn ghost small" id="addItem">＋ 行を追加</button>
+            <button type="button" class="btn ghost small" id="copyItems">前回の練習内容をコピー</button>
+          </div>
+          <p class="note" style="margin-top:6px">
+            「素振り」「ティー」「投球・ブルペン」は量の数字（本・球）、「ランニング」は km の数字が、練習量の集計に入ります。
+          </p>
+        </div>
+
+        <!-- 試合 -->
+        <div data-for="試合">
+          <div class="sub">試合</div>
+          <div class="fields">
+            <label class="f" for="n-opponent">対戦相手<input id="n-opponent" type="text" placeholder="例：○○高校"></label>
+            <label class="f" for="n-gtype">試合の種類
+              <select id="n-gtype"><option>練習試合</option><option>公式戦</option><option>紅白戦</option></select></label>
+            <label class="f" for="n-score">スコア<input id="n-score" type="text" placeholder="例：5-3"></label>
+            <label class="f" for="n-result">結果
+              <select id="n-result"><option value="">—</option><option>勝ち</option><option>負け</option><option>引き分け</option></select></label>
+          </div>
+          <div id="n-batBox">
+          <div class="sub">打撃成績（野手）</div>
+          <div class="fields">
+            <label class="f" for="n-pa">打席<input id="n-pa" type="number" min="0" placeholder="0"></label>
+            <label class="f" for="n-ob">出塁<input id="n-ob" type="number" min="0" placeholder="0"></label>
+            <label class="f" for="n-h">安打<input id="n-h" type="number" min="0" placeholder="0"></label>
+            <label class="f" for="n-xbh">長打<input id="n-xbh" type="number" min="0" placeholder="0"></label>
+            <label class="f" for="n-hr">本塁打<input id="n-hr" type="number" min="0" placeholder="0"></label>
+            <label class="f" for="n-rbi">打点<input id="n-rbi" type="number" min="0" placeholder="0"></label>
+          </div>
+          <p class="note" style="margin-top:6px">出塁は安打＋四死球の数。長打は二塁打・三塁打の数です（本塁打は「本塁打」に入れます）。</p>
+          </div>
+          <div id="n-pitchBox">
+            <div class="sub">投手成績（投手）</div>
+            <div class="fields">
+              <label class="f" for="n-ip">投球回<input id="n-ip" type="number" min="0" step="0.1" placeholder="5.2 = 5回2/3"></label>
+              <label class="f" for="n-ph">被安打<input id="n-ph" type="number" min="0" placeholder="0"></label>
+              <label class="f" for="n-phr">被本塁打<input id="n-phr" type="number" min="0" placeholder="0"></label>
+              <label class="f" for="n-k">奪三振<input id="n-k" type="number" min="0" placeholder="0"></label>
+              <label class="f" for="n-pbb">与四死球<input id="n-pbb" type="number" min="0" placeholder="0"></label>
+              <label class="f" for="n-er">自責点<input id="n-er" type="number" min="0" placeholder="0"></label>
+            </div>
+            <p class="note" style="margin-top:6px">投球回は野球の書き方で入れます（5回1/3 → 5.1、5回2/3 → 5.2）。</p>
+          </div>
+        </div>
+
+        <div class="sub">報告</div>
+        <label class="f" for="n-report">監督・コーチへの報告
+          <textarea id="n-report" placeholder="例：今日の練習で気づいたこと、相談したいこと、明日の予定など"></textarea></label>
+
+        <div class="actions">
+          <span class="note">同じ日にもう一度保存すると、その日のノートを上書きします。監督・コーチのコメントは消えません。</span>
+          <span class="spacer"></span>
+          <button class="btn" id="saveNote">保存する</button>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>書いたノート <span class="label-sm">「開く」で上のフォームに読み込んで直せます</span>
+          <span class="spacer"></span>
+          <input type="month" id="histMonth" style="width:auto">
+        </h3>
+        <div class="tscroll"><table class="t" id="histTable"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 試合成績 ══ -->
+  <section data-sec="games" hidden>
+    <div class="panel">
+      <h3>試合成績
+        <span class="spacer"></span>
+        <select id="gPer" style="width:auto"></select>
+      </h3>
+      <p class="note">試合の成績は「ノートを書く」で区分を<b>試合</b>にして入力します。</p>
+      <div class="po">
+        <div class="sub">自分の試合</div>
+        <div class="tscroll"><table class="t" id="myGameTable"></table></div>
+      </div>
+      <div class="sub">チームの打撃成績 <span class="label-sm">見出しを押すと並べ替えます</span></div>
+      <div class="tscroll"><table class="t" id="batTable"></table></div>
+      <div class="sub">チームの投手成績</div>
+      <div class="tscroll"><table class="t" id="pitTable"></table></div>
+      <p class="note" style="margin-top:8px" id="calcNote"></p>
+    </div>
+  </section>
+
+  <!-- ══ チーム ══ -->
+  <section data-sec="team" hidden>
+    <div class="panel">
+      <h3>チーム全体 <span class="label-sm">目標設定の項目</span>
+        <span class="spacer"></span><span class="vsel"></span>
+        <input type="month" id="teamMonth" style="width:auto">
+      </h3>
+      <div id="teamTiles"></div>
+    </div>
+
+    <div class="panel">
+      <h3>みんなのノート
+        <span class="spacer"></span>
+        <input type="date" id="feedDate" style="width:auto">
+      </h3>
+      <div class="cards" id="feed"></div>
+    </div>
+
+    <div class="panel">
+      <h3>部員別結果 <span class="label-sm">目標設定の項目の実績と目標。見出しを押すと並べ替えます</span>
+        <span class="spacer"></span><span class="vsel"></span>
+      </h3>
+      <div class="tscroll"><table class="t" id="resultTable"></table></div>
+      <p class="note" style="margin-top:8px">「実績 / 目標」の形です。色は月の進み具合との比較で、上限の項目は超えると赤になります。率は自動計算です。
+        <span class="rank-note"></span>被安打・被本塁打・与四死球・自責点・防御率・被打率は、少ないほうが上位です。</p>
+    </div>
+
+    <div class="panel">
+      <h3>部員別過程 <span class="label-sm">練習と自主練の記録をくらべます。見出しを押すと並べ替えます</span></h3>
+      <div class="tscroll"><table class="t" id="teamTable"></table></div>
+      <p class="note" style="margin-top:8px"><span class="rank-note"></span>平均睡眠時間が6時間未満の人は赤で表示します。</p>
+    </div>
+
+    <div class="panel">
+      <h3>週別の推移 <span class="label-sm">週は月曜はじまり</span></h3>
+      <div class="tscroll"><table class="t" id="weekTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ══ 個人 ══ -->
+  <section data-sec="me" hidden>
+    <!-- 指導者・オーナーは、各選手の個人ページを見られます -->
+    <div class="so" hidden>
+      <div class="panel">
+        <h3>選手の個人ページ <span class="label-sm">指導者として見ています（書きかえはできません）</span>
+          <span class="spacer"></span>
+          <select id="sp-who" style="width:auto"></select>
+          <select id="sp-year" style="width:auto"></select>
+        </h3>
+        <div id="sp-body"></div>
+        <div class="actions">
+          <span class="note" id="sp-pin"></span>
+          <span class="spacer"></span>
+          <button class="btn danger small" id="sp-reset">パスコードをリセット</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="po">
+      <div class="panel" id="pLock">
+        <h3>個人 <span class="label-sm" id="pWho"></span></h3>
+        <p class="note" id="pLockMsg" style="margin-bottom:10px"></p>
+        <div class="fields" style="max-width:480px">
+          <label class="f" for="p-pin">パスコード（数字4〜8けた）
+            <input id="p-pin" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></label>
+          <label class="f" for="p-pin2" id="p-pin2box" hidden>確認のためもう一度
+            <input id="p-pin2" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></label>
+          <button class="btn" id="pOpen">開く</button>
+        </div>
+      </div>
+
+      <div id="pBody" hidden>
+        <div class="panel">
+          <h3>年間目標 <span class="label-sm">自分だけが見られます</span>
+            <span class="spacer"></span>
+            <select id="pYear" style="width:auto"></select>
+            <button class="btn ghost small" id="pLockBtn">ロックする</button>
+          </h3>
+          <textarea id="p-ygoal" rows="3" placeholder="例：夏の大会でレギュラーをとる。打率.300、エラー0"></textarea>
+          <div class="actions">
+            <span class="spacer"></span>
+            <button class="btn" id="pSaveYear">年間目標を保存</button>
+          </div>
+        </div>
+
+        <div class="panel" id="pMonthForm">
+          <h3>月ごとの記録
+            <span class="spacer"></span><span class="tag" id="p-state"></span>
+            <input type="month" id="pMonth" style="width:auto">
+          </h3>
+          <div class="fields wide">
+            <label class="f" for="p-goal">目標<textarea id="p-goal" placeholder="この月に達成したいこと"></textarea></label>
+            <label class="f" for="p-now">現状<textarea id="p-now" placeholder="いまの自分の状態・できていること"></textarea></label>
+            <label class="f" for="p-issue">課題<textarea id="p-issue" placeholder="目標とのギャップ、直したいところ"></textarea></label>
+            <label class="f" for="p-report">報告<textarea id="p-report" placeholder="この月のまとめ・結果"></textarea></label>
+          </div>
+          <div class="actions">
+            <span class="note">同じ月にもう一度保存すると上書きします。</span>
+            <span class="spacer"></span>
+            <button class="btn" id="pSaveMonth">この月を保存</button>
+          </div>
+        </div>
+
+        <div class="panel">
+          <h3><span id="pYearTxt"></span>年の記録</h3>
+          <div class="cards" id="pList"></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ══ 目標設定 ══ -->
+  <section data-sec="target" hidden>
+    <div class="panel">
+      <h3>目標設定
+        <span class="spacer"></span><span class="vsel"></span>
+        <input type="month" id="tgtMonth" style="width:auto">
+        <button class="btn" id="saveTargets">目標を保存</button>
+      </h3>
+      <p class="note" style="margin-bottom:10px">
+        部員ごと、月ごとに設定します。空欄は0（目標なし）として扱います。
+        打率・出塁率・長打率、防御率・奪三振率・被打率は、入れた数字から自動で計算します。
+        被安打・被本塁打・与四死球・自責点は「ここまでに抑える」上限として入れてください。
+        <b>直した欄だけ</b>が保存されるので、ほかの人が同時に別の部員の目標を変えていても、互いに消し合うことはありません。
+      </p>
+      <div class="tscroll"><table class="t" id="tgtTable"></table></div>
+    </div>
+  </section>
+
+  <!-- ══ 設定（指導者・オーナー） ══ -->
+  <section data-sec="settings" hidden>
+    <div class="panel">
+      <h3>チームの設定 <span class="label-sm">指導者とオーナーだけが使えます</span></h3>
+      <div class="fields">
+        <label class="f" for="st-name">チーム名<input id="st-name" type="text"></label>
+        <label class="f" for="st-code">チームコード（ログイン用）<input id="st-code" type="text" autocapitalize="off" spellcheck="false"></label>
+      </div>
+      <div class="fields" style="margin-top:10px">
+        <label class="f" for="st-pass">新しいチームのパスワード<input id="st-pass" type="text" autocomplete="off" placeholder="変えるときだけ入れる"></label>
+        <label class="f" for="st-spass">新しい指導者用パスワード<input id="st-spass" type="text" autocomplete="off" placeholder="変えるときだけ入れる"></label>
+      </div>
+      <p class="note" style="margin-top:8px">
+        パスワードを変えると、そのパスワードでログインしていた端末はすべてログインし直しになります。
+        チームのパスワード（部員用）と指導者用パスワードは、別のものにしてください。
+      </p>
+    </div>
+    <div class="panel">
+      <h3>部員 <span class="label-sm">名前を直すと、これまでのノートや目標の名前も変わります</span></h3>
+      <div id="st-members"></div>
+      <button class="btn ghost small" id="st-addMember" style="margin-top:4px">＋ 部員を追加</button>
+      <div class="sub">指導者</div>
+      <div id="st-staff"></div>
+      <button class="btn ghost small" id="st-addStaff" style="margin-top:4px">＋ 指導者を追加</button>
+      <p class="note" style="margin-top:8px">部員を消しても、その部員の記録はスプレッドシートに残ります（画面には出なくなります）。</p>
+      <div class="actions"><span class="spacer"></span><button class="btn" id="st-save">設定を保存</button></div>
+    </div>
+  </section>
+  </div>
+</main>
+
+<script>
+/* ══════════════════════════════════════════
+   ここに Apps Script のウェブアプリURLを貼り付けてください（末尾が /exec）
+   空のままだと「お試しモード」になり、同じフォルダの demo.js と Code.gs を使って、この端末だけに保存します
+   ══════════════════════════════════════════ */
+const API_URL = "https://script.google.com/macros/s/AKfycbxik6zccxtzXbcB3OQbPej0ZoUCcK2dbEI6tbfdtXPfKP_nKFouTv_pHf4Wz5CmRX3djw/exec";
+
+const KINDS = ["練習", "試合", "自主練"];
+const ROLES = ["野手", "投手", "その他"];
+const CONDS = [
+  { v: 5, nm: "絶好調" }, { v: 4, nm: "良い" }, { v: 3, nm: "ふつう" },
+  { v: 2, nm: "いまいち" }, { v: 1, nm: "悪い" }
+];
+/* 目標を立てる指標。cap は「ここまでに抑える」上限の指標 */
+const GROUPS = [
+  {
+    key: "bat", nm: "野手",
+    items: [
+      { key: "pa",  nm: "打席" }, { key: "ob", nm: "出塁" }, { key: "h", nm: "安打" },
+      { key: "xbh", nm: "長打" }, { key: "hr", nm: "本塁打" }, { key: "rbi", nm: "打点" }
+    ],
+    rates: [
+      { key: "avg", nm: "打率", deps: ["pa", "h"], f: (s) => avgOf(s), fmt: (v) => r3(v), hi: true },
+      { key: "obp", nm: "出塁率", deps: ["pa", "ob"], f: (s) => (s.pa > 0 ? s.ob / s.pa : null), fmt: (v) => r3(v), hi: true },
+      { key: "slg", nm: "長打率", deps: ["pa", "h"], f: (s) => slgOf(s), fmt: (v) => r3(v), hi: true }
+    ]
+  },
+  {
+    key: "pit", nm: "投手",
+    items: [
+      { key: "ip", nm: "投球回" }, { key: "ph", nm: "被安打", cap: true }, { key: "phr", nm: "被本塁打", cap: true },
+      { key: "k", nm: "奪三振" }, { key: "pbb", nm: "与四死球", cap: true }, { key: "er", nm: "自責点", cap: true }
+    ],
+    rates: [
+      { key: "era", nm: "防御率", deps: ["ip", "er"], f: (s) => (s.ip > 0 ? (s.er * 27) / s.ip : null), fmt: (v) => f2(v), hi: false },
+      { key: "k9", nm: "奪三振率", deps: ["ip", "k"], f: (s) => (s.ip > 0 ? (s.k * 27) / s.ip : null), fmt: (v) => f2(v), hi: true },
+      { key: "baa", nm: "被打率", deps: ["ip", "ph"], f: (s) => (s.ip + s.ph > 0 ? s.ph / (s.ip + s.ph) : null), fmt: (v) => r3(v), hi: false }
+    ]
+  }
+];
+const GOAL_KEYS = GROUPS.reduce((a, g) => a.concat(g.items.map((m) => m.key)), []);
+const CALC_NOTE = "打数は「打席 −（出塁 − 安打）」、長打率は長打をすべて二塁打として計算した目安です（犠打・犠飛は分けていません）。" +
+  "防御率・奪三振率は9イニングあたり。被打率は「被安打 ÷（アウト数 ＋ 被安打）」の目安です。";
+const VIEW_KEY = "dreaming-view";
+/* 練習内容の入力候補 */
+const MENU_PRESETS = ["キャッチボール", "素振り", "ティー打撃", "トス打撃", "フリー打撃", "バント練習",
+  "ノック", "守備練習", "投球", "ブルペン", "ベースランニング", "ランニング", "ダッシュ",
+  "筋トレ", "体幹トレーニング", "ストレッチ"];
+/* 練習内容から、目標の集計に入れる数字を拾います（含まれる言葉で判定） */
+const ITEM_SUMS = [
+  { key: "swing", words: ["素振り"] },
+  { key: "tee",   words: ["ティー"] },
+  { key: "pitch", words: ["投球", "ブルペン", "ピッチング"] },
+  { key: "run",   words: ["ランニング", "ジョグ", "走"], km: true }
+];
+const NUM_LOG = ["swing", "tee", "pitch", "run"];
+const BAT_KEYS = ["pa", "ob", "h", "xbh", "hr", "rbi"];
+const PIT_KEYS = ["ip", "ph", "phr", "k", "pbb", "er"];
+const NUM_GAME = BAT_KEYS.concat(PIT_KEYS);
+const TEXT_GAME = ["opponent", "gtype", "score", "result"];
+const WHO_KEY = "dreaming-who";
+const TAB_KEY = "dreaming-tab";
+
+/* ── 共通 ───────────────────────────────── */
+const $ = (s) => document.querySelector(s);
+const $$ = (s) => Array.prototype.slice.call(document.querySelectorAll(s));
+const pad = (n) => String(n).padStart(2, "0");
+const ymd = (d) => d.getFullYear() + "-" + pad(d.getMonth() + 1) + "-" + pad(d.getDate());
+const NOW = new Date();
+const TODAY = ymd(NOW);
+const THIS_MONTH = TODAY.slice(0, 7);
+const THIS_YEAR = TODAY.slice(0, 4);
+const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const n0 = (v) => { const x = Number(v); return isFinite(x) ? x : 0; };
+const blankOr = (v) => (v === "" || v == null ? "" : n0(v));
+const f1 = (v) => (v == null || !isFinite(v)) ? "–" : (Math.round(v * 10) / 10).toLocaleString("ja-JP");
+const f2 = (v) => (v == null || !isFinite(v)) ? "–" : v.toFixed(2);
+const r3 = (v) => (v == null || !isFinite(v)) ? "–" : v.toFixed(3).replace(/^0/, "");
+/* 打数 = 打席 −（出塁 − 安打）。四死球を打席から引いた目安 */
+const abOf = (s) => Math.max(s.h, s.pa - Math.max(0, s.ob - s.h));
+const avgOf = (s) => { const ab = abOf(s); return ab > 0 ? s.h / ab : null; };
+/* 塁打 = 安打 + 長打（二塁打とみなす）+ 本塁打×3 */
+const slgOf = (s) => { const ab = abOf(s); return ab > 0 ? (s.h + s.xbh + 3 * s.hr) / ab : null; };
+const md = (iso) => iso ? Number(iso.slice(5, 7)) + "/" + Number(iso.slice(8, 10)) : "";
+const WD = ["日", "月", "火", "水", "木", "金", "土"];
+const dowOf = (iso) => iso ? WD[new Date(iso + "T00:00:00").getDay()] : "";
+const condName = (v) => { const c = CONDS.find((x) => x.v === Math.round(n0(v))); return c ? c.nm : "–"; };
+/* その日が属する週の月曜日 */
+function monOf(iso) {
+  const d = new Date(iso + "T00:00:00");
+  d.setDate(d.getDate() - ((d.getDay() + 6) % 7));
+  return ymd(d);
+}
+/* 月の進み具合（0〜1）。過去の月は1 */
+function monthPace(ym) {
+  if (ym < THIS_MONTH) return 1;
+  if (ym > THIS_MONTH) return 0;
+  const [y, m] = ym.split("-").map(Number);
+  return NOW.getDate() / new Date(y, m, 0).getDate();
+}
+/* 投球回 5.2 → 17アウト */
+function ipToOuts(v) {
+  const x = n0(v), whole = Math.floor(x);
+  return whole * 3 + Math.min(2, Math.round((x - whole) * 10));
+}
+/* 練習時間。"15:30" と "19:00" → 210分。日をまたぐときは翌日として数えます */
+function timeMins(a, b) {
+  const m = (s) => { const x = /^(\d{1,2}):(\d{2})$/.exec(s || ""); return x ? Number(x[1]) * 60 + Number(x[2]) : null; };
+  const s = m(a), e = m(b);
+  if (s == null || e == null) return 0;
+  return e >= s ? e - s : e + 1440 - s;
+}
+function minsTxt(v) {
+  const t = Math.round(n0(v));
+  if (!t) return "0分";
+  return (Math.floor(t / 60) ? Math.floor(t / 60) + "時間" : "") + (t % 60 ? (t % 60) + "分" : "");
+}
+function outsTxt(o) {
+  if (!o) return "0";
+  const w = Math.floor(o / 3), r = o % 3;
+  return r ? w + " " + r + "/3" : String(w);
+}
+
+/* ══════════════════════════════════════════
+   通信
+   ══════════════════════════════════════════ */
+const DEMO = !API_URL;
+const TOKEN_KEY = "dreaming-token";
+const SEL_KEY = "dreaming-selected";
+let TOKEN = "";
+try { TOKEN = localStorage.getItem(TOKEN_KEY) || ""; } catch (e) {}
+/* オーナーと組織の管理者が、いま見ている組織とチーム */
+let SEL = { org: "", team: "" };
+try { SEL = Object.assign(SEL, JSON.parse(localStorage.getItem(SEL_KEY)) || {}); } catch (e) {}
+
+/* お試しモードでは、同じフォルダの demo.js と Code.gs をこの画面の中で動かします */
+let demoReady = null;
+function loadScript(src) {
+  return new Promise((ok, ng) => {
+    const s = document.createElement("script");
+    s.src = src; s.onload = ok;
+    s.onerror = () => ng(new Error(src + " が見つかりません。index.html と同じフォルダに置いてください"));
+    document.head.appendChild(s);
+  });
+}
+function demoServer() {
+  if (!demoReady) demoReady = loadScript("demo.js").then(() => loadScript("Code.gs")).then(() => window.DemoServer.init());
+  return demoReady;
+}
+
+/* 呼ぶたびに、ログインの token と、見ている組織・チームを付けて送ります */
+async function api(fn, arg) {
+  const a = Object.assign({ token: TOKEN, org: SEL.org, team: SEL.team }, arg || {});
+  let data;
+  if (DEMO) {
+    await demoServer();
+    data = window.DemoServer.call(fn, a);
+  } else {
+    const res = await fetch(API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" },
+      body: JSON.stringify({ fn, args: [a] })
+    });
+    if (!res.ok) throw new Error("サーバーに接続できませんでした");
+    data = await res.json();
+  }
+  if (data.error) {
+    /* ログインが切れたときは、ログイン画面に戻します */
+    if (String(data.error).indexOf("AUTH:") === 0) { logout(String(data.error).slice(5)); throw new Error(String(data.error).slice(5)); }
+    throw new Error(data.error);
+  }
+  return data.result;
+}
+function setToken(t) {
+  TOKEN = t || "";
+  try { if (TOKEN) localStorage.setItem(TOKEN_KEY, TOKEN); else localStorage.removeItem(TOKEN_KEY); } catch (e) {}
+}
+function setSel(org, team) {
+  SEL = { org: org || "", team: team || "" };
+  try { localStorage.setItem(SEL_KEY, JSON.stringify(SEL)); } catch (e) {}
+}
+
+/* ── 状態 ───────────────────────────────── */
+let MEMBERS = [];
+let STAFF = [];
+let LOGS = [];
+let GAMES = [];
+let TARGETS = {};
+let ME = "";
+let BUSY = false;
+/* ログインしている人の役割："team"（部員）・"staff"（指導者）・"orgadmin"（組織の管理者）・"owner"（オーナー） */
+let ROLE = "";
+let TEAM = { id: "", name: "", code: "", orgName: "" };
+const isStaff = (n) => STAFF.indexOf(n) >= 0;
+const canManage = () => ROLE === "staff" || ROLE === "orgadmin" || ROLE === "owner";
+const ROLE_NAMES = { team: "部員", staff: "指導者", orgadmin: "組織の管理者", owner: "オーナー" };
+
+function showErr(m) { const e = $("#err"); if (!m) { e.hidden = true; return; } e.textContent = m; e.hidden = false; }
+function flash(m) {
+  const e = $("#msg");
+  e.textContent = m; e.hidden = false;
+  setTimeout(() => { e.hidden = true; }, 3000);
+}
+function setMode(state, txt) { const p = $("#modePill"); p.textContent = txt; p.className = "pill" + (state ? " " + state : ""); }
+
+/* ══════════════════════════════════════════
+   集計
+   ══════════════════════════════════════════ */
+/* per は "2026-11"（月）、"2026"（年）、"all" または空（全期間） */
+function inPer(iso, per, from, to) {
+  if (!iso) return false;
+  if (per && per !== "all" && iso.slice(0, per.length) !== per) return false;
+  if (from && iso < from) return false;
+  if (to && iso > to) return false;
+  return true;
+}
+/* name が空なら部員全員 */
+function pick(list, name, per, from, to) {
+  return list.filter((x) => (name ? x.name === name : MEMBERS.indexOf(x.name) >= 0) && inPer(x.date, per, from, to));
+}
+function totals(name, per, from, to) {
+  const logs = pick(LOGS, name, per, from, to);
+  const games = pick(GAMES, name, per, from, to);
+  const sum = (arr, k) => arr.reduce((a, x) => a + n0(x[k]), 0);
+  const avg = (arr, k) => { const v = arr.filter((x) => n0(x[k]) > 0); return v.length ? sum(v, k) / v.length : null; };
+  return {
+    notes: logs.length,
+    days: logs.length,
+    swing: sum(logs, "swing"), tee: sum(logs, "tee"), pitch: sum(logs, "pitch"),
+    run: Math.round(sum(logs, "run") * 10) / 10,
+    mins: sum(logs, "mins"),
+    cond: avg(logs, "cond"), sleep: avg(logs, "sleep"),
+    last: logs.reduce((a, l) => (l.date > a ? l.date : a), ""),
+    games: games.length,
+    bgames: games.filter((g) => n0(g.pa) > 0).length,
+    apps: games.filter((g) => ipToOuts(g.ip) > 0).length,
+    /* 投球回はアウト数で持ちます */
+    ip: games.reduce((a, g) => a + ipToOuts(g.ip), 0),
+    pa: sum(games, "pa"), ob: sum(games, "ob"), h: sum(games, "h"), xbh: sum(games, "xbh"),
+    hr: sum(games, "hr"), rbi: sum(games, "rbi"),
+    ph: sum(games, "ph"), phr: sum(games, "phr"), k: sum(games, "k"), pbb: sum(games, "pbb"), er: sum(games, "er")
+  };
+}
+/* 目標。投球回は「5.2」のような書き方で入れ、アウト数に直して持ちます */
+function targetOf(name, ym) {
+  const t = (TARGETS[ym] || {})[name] || {};
+  const o = {};
+  GOAL_KEYS.forEach((k) => (o[k] = k === "ip" ? ipToOuts(t[k]) : n0(t[k])));
+  return o;
+}
+function teamTarget(ym) {
+  const o = {};
+  GOAL_KEYS.forEach((k) => (o[k] = MEMBERS.reduce((a, n) => a + targetOf(n, ym)[k], 0)));
+  return o;
+}
+const fmtVal = (m, v) => (m.key === "ip" ? outsTxt(v) : f1(v));
+/* 色。上限の指標は超えたら赤、それ以外は月の進み具合と比べます */
+function goalClass(m, cur, tgt, q) {
+  if (!tgt) return "";
+  if (m.cap) return cur > tgt ? "cell-bad" : cur > tgt * Math.max(q, 0.01) ? "cell-warn" : "cell-ok";
+  return paceClass(cur, tgt, q);
+}
+/* 目標の率。もとになる項目の目標がそろっていないときは計算しません */
+const rateTarget = (r, tgt) => (r.deps.every((k) => tgt[k] > 0) ? r.f(tgt) : null);
+function rateClass(r, cur, tgt) {
+  if (cur == null || tgt == null) return "";
+  return (r.hi ? cur >= tgt : cur <= tgt) ? "cell-ok" : "cell-bad";
+}
+
+/* 表示する指標のグループ（野手・投手）。チーム・目標設定・マイノートで共通 */
+let VIEW = { bat: true, pit: true };
+try { const v = JSON.parse(localStorage.getItem(VIEW_KEY)); if (v && (v.bat || v.pit)) VIEW = { bat: !!v.bat, pit: !!v.pit }; } catch (e) {}
+const viewGroups = () => GROUPS.filter((g) => VIEW[g.key]);
+function renderVsel() {
+  $$(".vsel").forEach((el) => {
+    el.innerHTML = GROUPS.map((g) => '<label><input type="checkbox" data-view="' + g.key + '"' + (VIEW[g.key] ? " checked" : "") + "> " + g.nm + "</label>").join("");
+  });
+}
+
+/* 目標の指標を、グループごとのタイルにします（チーム全体・マイノート） */
+function goalTiles(cur, tgt, q) {
+  return viewGroups().map((g) =>
+    '<div class="sub">' + g.nm + '</div><div class="tiles">' +
+    g.items.map((m) => {
+      const c = cur[m.key], t = tgt[m.key];
+      const cls = goalClass(m, c, t, q);
+      return '<div class="tile"><span class="label-sm">' + m.nm + (m.cap ? "（上限）" : "") + "</span>" +
+        '<b class="' + cls + '">' + fmtVal(m, c) + (t ? '<span class="note" style="display:inline;font-size:12px"> / ' + fmtVal(m, t) + "</span>" : "") + "</b>" +
+        (t && !m.cap
+          ? '<div class="mbar ' + cls.replace("cell-", "") + '"><i style="width:' + Math.min(100, (c / t) * 100) + '%"></i></div>' +
+            '<span class="note">達成 ' + Math.round((c / t) * 100) + "%</span>"
+          : '<span class="note">' + (t ? (c > t ? "上限を超えています" : "あと " + fmtVal(m, t - c) + " まで") : "目標なし") + "</span>") +
+        "</div>";
+    }).join("") +
+    g.rates.map((r) => {
+      const c = r.f(cur), t = rateTarget(r, tgt);
+      return '<div class="tile rate"><span class="label-sm">' + r.nm + "（自動計算）</span>" +
+        '<b class="' + rateClass(r, c, t) + '">' + r.fmt(c) + "</b>" +
+        '<span class="note">' + (t == null ? "目標なし" : "目標 " + r.fmt(t)) + "</span></div>";
+    }).join("") +
+    "</div>"
+  ).join("");
+}
+/* 達成率の色。月の進みに追いついているか */
+function paceClass(cur, tgt, q) {
+  if (!tgt) return "";
+  const r = cur / tgt;
+  return r >= q * 0.95 ? "cell-ok" : r >= q * 0.7 ? "cell-warn" : "cell-bad";
+}
+/* 今日（まだなら昨日）から何日続けて書いているか */
+function streak(name) {
+  const set = new Set(LOGS.filter((l) => l.name === name).map((l) => l.date));
+  const d = new Date(NOW);
+  if (!set.has(ymd(d))) d.setDate(d.getDate() - 1);
+  let c = 0;
+  while (set.has(ymd(d))) { c++; d.setDate(d.getDate() - 1); }
+  return c;
+}
+
+const tile = (k, v, sub, cls) =>
+  '<div class="tile"><span class="label-sm">' + k + '</span><b class="' + (cls || "") + '">' + v + '</b><span class="note">' + (sub || "") + "</span></div>";
+
+/* その日にやったことの1行まとめ。試合なら成績、練習なら練習量 */
+function workLine(l) {
+  if (l.kind === "試合") {
+    const parts = ["vs " + (l.opponent || "—") + (l.gtype ? "（" + l.gtype + "）" : "")];
+    if (l.score || l.result) parts.push([l.score, l.result].filter(Boolean).join(" "));
+    if (n0(l.pa)) {
+      parts.push(n0(l.pa) + "打席" + n0(l.ob) + "出塁" + n0(l.h) + "安打" + (n0(l.xbh) ? " 長打" + n0(l.xbh) : "") +
+        (n0(l.hr) ? " 本塁打" + n0(l.hr) : "") + (n0(l.rbi) ? " " + n0(l.rbi) + "打点" : ""));
+    }
+    const outs = ipToOuts(l.ip);
+    if (outs) {
+      parts.push(outsTxt(outs) + "回 被安打" + n0(l.ph) + (n0(l.phr) ? " 被本塁打" + n0(l.phr) : "") +
+        " 奪三振" + n0(l.k) + " 与四死球" + n0(l.pbb) + " 自責" + n0(l.er));
+    }
+    return parts.join("・");
+  }
+  return l.items.map((it) => (it.w + (it.q ? " " + it.q : ""))).join("・");
+}
+/* 練習内容の表（カード用） */
+function itemsTable(items) {
+  if (!items.length) return "";
+  const memo = items.some((it) => it.m);
+  return '<table class="items"><thead><tr><th>練習内容</th><th>量</th>' + (memo ? "<th>備考</th>" : "") + "</tr></thead><tbody>" +
+    items.map((it) => "<tr><td>" + esc(it.w) + '</td><td class="q">' + esc(it.q || "—") + "</td>" + (memo ? "<td>" + esc(it.m) + "</td>" : "") + "</tr>").join("") +
+    "</tbody></table>";
+}
+/* 量の文字から数字を取り出します（「３００本」「3.5km」など） */
+function qtyNum(q, km) {
+  const s = String(q || "").normalize("NFKC");
+  if (km && !/km|キロ/i.test(s)) return 0;
+  const m = s.match(/\d+(\.\d+)?/);
+  return m ? Number(m[0]) : 0;
+}
+function itemSums(items) {
+  const o = {};
+  ITEM_SUMS.forEach((s) => {
+    o[s.key] = items.filter((it) => s.words.some((w) => it.w.indexOf(w) >= 0))
+      .reduce((a, it) => a + qtyNum(it.q, s.km), 0);
+  });
+  o.run = Math.round(o.run * 10) / 10;
+  return o;
+}
+function parseItems(v) {
+  let a = v;
+  if (typeof v === "string") { try { a = v ? JSON.parse(v) : []; } catch (e) { a = []; } }
+  return (Array.isArray(a) ? a : []).map((it) => ({ w: String((it && it.w) || ""), q: String((it && it.q) || ""), m: String((it && it.m) || "") }))
+    .filter((it) => it.w || it.q || it.m);
+}
+const kindTag = (k) => '<span class="tag' + (k === "試合" ? " bad" : k === "練習" ? " ok" : " blue") + '">' + esc(k || "練習") + "</span>";
+
+/* ノート1日分のカード */
+function noteCard(l, withName, editable) {
+  const work = workLine(l);
+  const body = [
+    l.tstart && l.tend ? l.tstart + "〜" + l.tend + "（" + minsTxt(l.mins) + "）" : "",
+    n0(l.cond) ? "体調 " + condName(l.cond) : "",
+    n0(l.sleep) ? "睡眠 " + n0(l.sleep) + "h" : ""
+  ].filter(Boolean).join("・");
+  let h = '<div class="card"><div class="card-h">' +
+    (withName ? "<b>" + esc(l.name) + "</b>" : "<b>" + md(l.date) + "（" + dowOf(l.date) + "）</b>") +
+    " " + kindTag(l.kind) + roleTags(l.roles) +
+    ' <span class="note">' + esc(body) + "</span></div>";
+  if (l.kind === "試合") {
+    if (work) h += '<p style="margin:0 0 6px;font-size:13px;font-weight:700">' + esc(work) + "</p>";
+  } else {
+    h += itemsTable(l.items) || '<p class="note">練習内容は書かれていません。</p>';
+  }
+  if (l.report) h += '<dl style="margin-top:8px"><dt>報告</dt><dd>' + esc(l.report) + "</dd></dl>";
+  if (editable) {
+    h += '<div class="cmt-edit"><textarea data-cm="' + l.id + '" placeholder="コメントを書く（' + esc(ME) + " として）\">" + esc(l.comment || "") + "</textarea>" +
+      '<button class="btn small" data-cmsave="' + l.id + '">送る</button></div>';
+    if (l.comment && l.commentBy) h += '<p class="note">いまのコメント：' + esc(l.commentBy) + "</p>";
+  } else if (l.comment) {
+    h += '<div class="cmt"><span class="label-sm">' + esc(l.commentBy || "指導者") + " より</span>" + esc(l.comment) + "</div>";
+  }
+  return h + "</div>";
+}
+
+/* ══════════════════════════════════════════
+   マイノート
+   ══════════════════════════════════════════ */
+function renderMy() {
+  if (isStaff(ME) || !ME) return;
+  const ym = $("#myMonth").value || THIS_MONTH;
+  const cur = totals(ME, ym);
+  const tgt = targetOf(ME, ym);
+  const q = monthPace(ym);
+  $("#myName").textContent = ME;
+  $("#streak").textContent = "連続記入 " + streak(ME) + "日";
+  $("#paceTxt").textContent = "月の進み " + Math.round(q * 100) + "%";
+
+  const unit = (u) => '<span class="note" style="display:inline"> ' + u + "</span>";
+  $("#myWork").innerHTML =
+    tile("素振り", f1(cur.swing) + unit("本")) + tile("ティー打撃", f1(cur.tee) + unit("球")) +
+    tile("投球", f1(cur.pitch) + unit("球")) + tile("走った距離", f1(cur.run) + unit("km")) +
+    tile("練習時間", cur.mins ? minsTxt(cur.mins) : "–", "この月の合計");
+
+  $("#myBody").innerHTML =
+    tile("平均の体調", cur.cond == null ? "–" : condName(cur.cond), cur.cond == null ? "" : "5段階で " + f1(cur.cond)) +
+    tile("平均の睡眠", cur.sleep == null ? "–" : f1(cur.sleep) + '<span class="note" style="display:inline"> 時間</span>', cur.sleep != null && cur.sleep < 7 ? "7時間を目安に" : "") +
+    tile("ノートを書いた日", cur.notes + '<span class="note" style="display:inline"> 日</span>', "");
+
+  /* 目標に対する進み具合 */
+  $("#myGoal").innerHTML = goalTiles(cur, tgt, q);
+
+  /* 試合成績（選んだ月の年） */
+  const yr = ym.slice(0, 4);
+  const g = totals(ME, yr);
+  $("#myYear").textContent = yr;
+  const rt = (gk, rk) => { const r = GROUPS.find((x) => x.key === gk).rates.find((x) => x.key === rk); return r.fmt(r.f(g)); };
+  $("#myGames").innerHTML = g.games
+    ? tile("試合", g.games) +
+      (g.pa ? tile("打率", rt("bat", "avg"), g.pa + "打席 " + g.h + "安打") + tile("出塁率", rt("bat", "obp")) +
+        tile("長打率", rt("bat", "slg")) + tile("本塁打", g.hr) + tile("打点", g.rbi) : "") +
+      (g.ip ? tile("投球回", outsTxt(g.ip), g.apps + "試合に登板") + tile("防御率", rt("pit", "era")) +
+        tile("奪三振率", rt("pit", "k9")) + tile("被打率", rt("pit", "baa")) : "")
+    : '<div class="empty">この年の試合成績はまだありません。「ノートを書く」で区分を試合にして入力できます。</div>';
+
+  /* ふり返り */
+  const notes = LOGS.filter((l) => l.name === ME && inPer(l.date, ym))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  $("#myNotes").innerHTML = notes.length
+    ? notes.map((l) => noteCard(l, false, false)).join("")
+    : '<div class="empty">この月のノートはまだありません。</div>';
+}
+
+/* ══════════════════════════════════════════
+   ノートを書く
+   ══════════════════════════════════════════ */
+let NOTE_DIRTY = false;
+let NOTE_KIND = "練習";
+
+/* 区分を切り替えると、その区分の入力欄だけを出します */
+function setKind(k) {
+  NOTE_KIND = KINDS.indexOf(k) >= 0 ? k : "練習";
+  $$("#n-kind button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.kind === NOTE_KIND)));
+  $$("#noteForm [data-for]").forEach((e) => (e.hidden = e.dataset.for.split(" ").indexOf(NOTE_KIND) < 0));
+  applyRoles();
+}
+
+/* 野手・投手・その他。試合では、チェックに合わせて打撃・投手の欄を出します */
+function getRoles() { return $$("#n-roles input:checked").map((c) => c.value); }
+function setRoles(list) { $$("#n-roles input").forEach((c) => (c.checked = (list || []).indexOf(c.value) >= 0)); applyRoles(); }
+function applyRoles() {
+  const r = getRoles();
+  $("#n-batBox").hidden = r.indexOf("野手") < 0;
+  $("#n-pitchBox").hidden = r.indexOf("投手") < 0;
+}
+/* 新しく書くときは、前回のノートのチェックを引き継ぎます */
+function lastRoles(name) {
+  const prev = LOGS.filter((l) => l.name === name && l.roles.length).sort((a, b) => b.date.localeCompare(a.date))[0];
+  return prev ? prev.roles : [];
+}
+const roleTags = (roles) => roles.map((r) => ' <span class="tag">' + esc(r) + "</span>").join("");
+
+/* 練習内容の入力行 */
+function itemRow(it) {
+  it = it || {};
+  return '<div class="irow">' +
+    '<input type="text" class="iw" list="menuList" aria-label="練習内容" placeholder="例：素振り" value="' + esc(it.w || "") + '">' +
+    '<input type="text" class="iq" aria-label="量" placeholder="例：300本" value="' + esc(it.q || "") + '">' +
+    '<input type="text" class="im" aria-label="備考" placeholder="備考（ねらい・気づいたこと）" value="' + esc(it.m || "") + '">' +
+    '<button type="button" class="x" data-ix title="この行を消す" aria-label="この行を消す">×</button></div>';
+}
+function setItems(items) {
+  const list = items && items.length ? items : [{}];
+  $("#n-items").innerHTML = list.map(itemRow).join("");
+}
+function getItems() {
+  return parseItems($$("#n-items .irow").map((r) => ({
+    w: r.querySelector(".iw").value.trim(), q: r.querySelector(".iq").value.trim(), m: r.querySelector(".im").value.trim()
+  })));
+}
+
+/* 日付を選ぶと、その日のノートがあればフォームに読み込みます */
+function loadNote(date) {
+  const l = LOGS.find((x) => x.name === ME && x.date === date);
+  const v = (k) => (l && n0(l[k]) ? n0(l[k]) : "");
+  setKind(l ? l.kind : NOTE_KIND);
+  $("#n-cond").value = l && n0(l.cond) ? String(Math.round(n0(l.cond))) : "";
+  $("#n-sleep").value = v("sleep");
+  $("#n-tstart").value = (l && l.tstart) || "";
+  $("#n-tend").value = (l && l.tend) || "";
+  showTimeLen();
+  NUM_GAME.forEach((k) => ($("#n-" + k).value = v(k)));
+  /* 試合の投球数は投手欄に入れます */
+  const game = !!l && l.kind === "試合";
+  setRoles(l ? l.roles : lastRoles(ME));
+  setItems(l && !game ? l.items : []);
+  TEXT_GAME.concat(["report"]).forEach((k) => ($("#n-" + k).value = (l && l[k]) || ""));
+  if (!$("#n-gtype").value) $("#n-gtype").value = "練習試合";
+  $("#n-state").textContent = l ? "書いたノートを開いています" : "新しく書きます";
+  $("#n-state").className = "tag" + (l ? " blue" : "");
+  NOTE_DIRTY = false;
+}
+
+function renderInput() {
+  if (isStaff(ME) || !ME) return;
+  $("#inputWho").textContent = ME + " として書きます";
+  const ym = $("#histMonth").value || THIS_MONTH;
+  const rows = LOGS.filter((l) => l.name === ME && inPer(l.date, ym))
+    .sort((a, b) => b.date.localeCompare(a.date));
+  let h = '<thead><tr><th class="l">日付</th><th class="l">区分</th><th>体調</th><th class="l">内容</th><th class="l">コメント</th><th></th></tr></thead><tbody>';
+  if (!rows.length) h += '<tr><td class="l" colspan="6"><span class="note">この月のノートはまだありません。</span></td></tr>';
+  rows.forEach((l) => {
+    h += '<tr><td class="l">' + md(l.date) + "（" + dowOf(l.date) + "）</td>" +
+      '<td class="l">' + kindTag(l.kind) + roleTags(l.roles) + "</td>" +
+      '<td class="num">' + condName(l.cond) + "</td>" +
+      '<td class="l"><span class="note">' + (esc(workLine(l)) || "—") + "</span></td>" +
+      '<td class="l">' + (l.comment ? '<span class="tag blue">あり</span>' : '<span class="note">—</span>') + "</td>" +
+      '<td><button class="btn ghost small" data-lopen="' + esc(l.date) + '">開く</button>' +
+      ' <button class="btn danger small" data-ldel="' + l.id + '">削除</button></td></tr>';
+  });
+  $("#histTable").innerHTML = h + "</tbody>";
+}
+
+/* ══════════════════════════════════════════
+   試合成績
+   ══════════════════════════════════════════ */
+let BAT_SORT = { key: "avg", dir: -1 };
+let PIT_SORT = { key: "ip", dir: -1 };
+
+function renderPerOptions() {
+  const sel = $("#gPer");
+  const keep = sel.value || THIS_YEAR;
+  const years = Array.from(new Set(GAMES.map((g) => (g.date || "").slice(0, 4)).filter(Boolean).concat([THIS_YEAR]))).sort().reverse();
+  sel.innerHTML = years.map((y) => '<option value="' + y + '">' + y + "年</option>").join("") + '<option value="all">全期間</option>';
+  sel.value = years.indexOf(keep) >= 0 || keep === "all" ? keep : THIS_YEAR;
+}
+
+function renderGames() {
+  renderPerOptions();
+  const per = $("#gPer").value;
+  if (ME && !isStaff(ME)) {
+    const mine = GAMES.filter((g) => g.name === ME && inPer(g.date, per)).sort((a, b) => b.date.localeCompare(a.date));
+    const B = GROUPS[0].items, P = GROUPS[1].items;
+    let h = '<thead><tr><th class="l">試合日</th><th class="l">相手</th><th class="l">結果</th>' +
+      B.concat(P).map((m) => "<th>" + m.nm + "</th>").join("") + "<th></th></tr></thead><tbody>";
+    if (!mine.length) h += '<tr><td class="l" colspan="16"><span class="note">この期間の試合はありません。</span></td></tr>';
+    mine.forEach((g) => {
+      const outs = ipToOuts(g.ip);
+      h += '<tr><td class="l">' + md(g.date) + "（" + dowOf(g.date) + "）</td>" +
+        '<td class="l">' + esc(g.opponent || "—") + ' <span class="tag' + (g.gtype === "公式戦" ? " blue" : "") + '">' + esc(g.gtype || "") + "</span></td>" +
+        '<td class="l">' + esc([g.score, g.result].filter(Boolean).join(" ") || "—") + "</td>" +
+        B.map((m) => '<td class="num">' + (n0(g.pa) ? n0(g[m.key]) : "–") + "</td>").join("") +
+        P.map((m) => '<td class="num">' + (outs ? (m.key === "ip" ? outsTxt(outs) : n0(g[m.key])) : "–") + "</td>").join("") +
+        '<td><button class="btn ghost small" data-lopen="' + esc(g.date) + '">ノートを開く</button></td></tr>';
+    });
+    $("#myGameTable").innerHTML = h + "</tbody>";
+  }
+
+  $("#batTable").innerHTML = statTable(GROUPS[0], per, "bgames", "試合", BAT_SORT, "bsort", (c) => c.pa > 0);
+  $("#pitTable").innerHTML = statTable(GROUPS[1], per, "apps", "登板", PIT_SORT, "psort", (c) => c.ip > 0);
+  $("#calcNote").textContent = CALC_NOTE;
+}
+
+/* チームの成績表。積み上げの項目と自動計算の率を並べ、見出しで並べ替えます */
+function statTable(grp, per, nKey, nNm, sort, attr, has) {
+  const rows = MEMBERS.map((n) => ({ name: n, c: totals(n, per) })).filter((r) => has(r.c));
+  const val = (r, k) => {
+    const rate = grp.rates.find((x) => x.key === k);
+    if (!rate) return r.c[k];
+    const v = rate.f(r.c);
+    return v == null ? -1 : v;
+  };
+  rows.sort((a, b) => (val(a, sort.key) - val(b, sort.key)) * sort.dir || a.name.localeCompare(b.name));
+  const cols = [{ key: nKey, nm: nNm }].concat(grp.items, grp.rates);
+  let h = '<thead><tr><th class="l">' + (grp.key === "bat" ? "選手" : "投手") + "</th>" +
+    cols.map((c) => "<th data-" + attr + '="' + c.key + '" style="cursor:pointer">' + c.nm +
+      (sort.key === c.key ? (sort.dir > 0 ? " ▲" : " ▼") : "") + "</th>").join("") + "</tr></thead><tbody>";
+  if (!rows.length) h += '<tr><td class="l" colspan="' + (cols.length + 1) + '"><span class="note">この期間の' + grp.nm + "の成績はまだありません。</span></td></tr>";
+  rows.forEach((r) => {
+    h += '<tr><td class="l"><b>' + esc(r.name) + "</b></td>" +
+      '<td class="num">' + r.c[nKey] + "</td>" +
+      grp.items.map((m) => '<td class="num">' + fmtVal(m, r.c[m.key]) + "</td>").join("") +
+      grp.rates.map((x) => '<td class="num calc">' + x.fmt(x.f(r.c)) + "</td>").join("") + "</tr>";
+  });
+  return h + "</tbody>";
+}
+
+/* ══════════════════════════════════════════
+   チーム
+   ══════════════════════════════════════════ */
+let SORT = { key: "p_days", dir: -1 };
+let RES_SORT = { key: "", dir: -1 };
+let CM_DIRTY = false;
+const sortMark = (s, k) => (s.key === k ? (s.dir > 0 ? " ▲" : " ▼") : "");
+/* 列ごとの順位。同じ値は同じ順位（1, 1, 3…）。null の人には順位を付けません。low は少ないほど良い項目 */
+function ranks(vals, low) {
+  const list = vals.map((v, i) => ({ v, i })).filter((x) => x.v != null && isFinite(x.v));
+  list.sort((a, b) => (low ? a.v - b.v : b.v - a.v));
+  const out = vals.map(() => 0);
+  list.forEach((x, j) => { out[x.i] = j && list[j - 1].v === x.v ? out[list[j - 1].i] : j + 1; });
+  return out;
+}
+const rkClass = (n) => (n >= 1 && n <= 3 ? " rk" + n : "");
+const RANK_NOTE = '上位は <b class="rk1">1位</b>・<b class="rk2">2位</b>・<b class="rk3">3位</b> の色で表示します。';
+
+/* 部員別結果：目標設定の項目について、部員ごとの実績と目標、自動計算の率 */
+function resultTable(ym, q) {
+  const gs = viewGroups();
+  const rows = MEMBERS.map((n) => ({ name: n, c: totals(n, ym), t: targetOf(n, ym) }));
+  const val = (r, k) => {
+    for (const g of GROUPS) {
+      const rate = g.rates.find((x) => x.key === k);
+      if (rate) { const v = rate.f(r.c); return v == null ? -1 : v; }
+    }
+    return r.c[k];
+  };
+  if (RES_SORT.key) rows.sort((a, b) => (val(a, RES_SORT.key) - val(b, RES_SORT.key)) * RES_SORT.dir || a.name.localeCompare(b.name));
+  /* 順位。打撃は打席に立った人、投手は投げた人の中で比べます。多いほど良い項目は0の人を除きます */
+  const rk = {};
+  GROUPS.forEach((g) => {
+    const elig = (r) => (g.key === "bat" ? r.c.pa > 0 : r.c.ip > 0);
+    g.items.forEach((m) => {
+      rk[m.key] = ranks(rows.map((r) => (!elig(r) || (!m.cap && !(r.c[m.key] > 0)) ? null : r.c[m.key])), !!m.cap);
+    });
+    g.rates.forEach((x) => { rk[x.key] = ranks(rows.map((r) => (elig(r) ? x.f(r.c) : null)), !x.hi); });
+  });
+  let h = '<thead><tr><th class="l" rowspan="2">部員</th>' +
+    gs.map((g) => '<th colspan="' + (g.items.length + g.rates.length) + '" style="text-align:center">' + g.nm + "</th>").join("") +
+    "</tr><tr>" +
+    gs.map((g) => g.items.concat(g.rates).map((m) =>
+      '<th data-rsort="' + m.key + '" style="cursor:pointer">' + m.nm + sortMark(RES_SORT, m.key) + "</th>").join("")).join("") +
+    "</tr></thead><tbody>";
+  rows.forEach((r, ri) => {
+    h += '<tr><td class="l"><b>' + esc(r.name) + "</b></td>" +
+      gs.map((g) =>
+        g.items.map((m) => {
+          const c = r.c[m.key], t = r.t[m.key];
+          return '<td class="num ' + goalClass(m, c, t, q) + rkClass(rk[m.key][ri]) + '">' + fmtVal(m, c) +
+            (t ? '<span class="note"> /' + fmtVal(m, t) + "</span>" : "") + "</td>";
+        }).join("") +
+        g.rates.map((x) => {
+          const c = x.f(r.c), t = rateTarget(x, r.t);
+          return '<td class="num calc ' + rateClass(x, c, t) + rkClass(rk[x.key][ri]) + '">' + x.fmt(c) +
+            (t != null ? '<span class="note"> /' + x.fmt(t) + "</span>" : "") + "</td>";
+        }).join("")
+      ).join("") + "</tr>";
+  });
+  if (!rows.length) h += '<tr><td class="l"><span class="note">部員が登録されていません。</span></td></tr>';
+  return h + "</tbody>";
+}
+
+/* 部員別過程：練習と自主練の日数・時間と、平均睡眠時間をくらべます */
+const PROC_ITEMS = [["days", "日数"], ["mins", "時間"]];
+const PROC_KINDS = [["p", "練習"], ["s", "自主練"]];
+function kindTotals(name, ym, kind) {
+  const logs = pick(LOGS, name, ym).filter((l) => l.kind === kind);
+  return { days: logs.length, mins: logs.reduce((a, l) => a + n0(l.mins), 0) };
+}
+function processTable(ym) {
+  const rows = MEMBERS.map((n) => ({ name: n, c: totals(n, ym), p: kindTotals(n, ym, "練習"), s: kindTotals(n, ym, "自主練") }));
+  /* 並べ替えのキーは "p_days"（練習の日数）や "s_mins"（自主練の時間）、"sleep"（平均睡眠） */
+  const val = (r, k) => {
+    const i = k.indexOf("_");
+    if (i > 0) return n0(r[k.slice(0, i)][k.slice(i + 1)]);
+    return r.c[k] == null ? -1 : r.c[k];
+  };
+  rows.sort((a, b) => (val(a, SORT.key) - val(b, SORT.key)) * SORT.dir || a.name.localeCompare(b.name));
+  const cell = (k, v) => (k === "mins" ? (v ? minsTxt(v) : "–") : v ? v + "日" : "–");
+  let h = '<thead><tr><th class="l" rowspan="2">部員</th>' +
+    PROC_KINDS.map((x) => '<th colspan="' + PROC_ITEMS.length + '" style="text-align:center">' + x[1] + "</th>").join("") +
+    '<th rowspan="2" data-sort="sleep" style="cursor:pointer">平均睡眠時間' + sortMark(SORT, "sleep") + "</th></tr><tr>" +
+    PROC_KINDS.map((x) => PROC_ITEMS.map((it) => {
+      const k = x[0] + "_" + it[0];
+      return '<th data-sort="' + k + '" style="cursor:pointer">' + it[1] + sortMark(SORT, k) + "</th>";
+    }).join("")).join("") + "</tr></thead><tbody>";
+  /* 順位。日数・時間は0の人を除き、睡眠は長いほど上にします */
+  const rk = { sleep: ranks(rows.map((r) => r.c.sleep)) };
+  PROC_KINDS.forEach((x) => PROC_ITEMS.forEach((it) => {
+    rk[x[0] + "_" + it[0]] = ranks(rows.map((r) => (r[x[0]][it[0]] > 0 ? r[x[0]][it[0]] : null)));
+  }));
+  rows.forEach((r, ri) => {
+    h += '<tr><td class="l"><b>' + esc(r.name) + "</b></td>" +
+      PROC_KINDS.map((x) => PROC_ITEMS.map((it, i) =>
+        '<td class="num' + rkClass(rk[x[0] + "_" + it[0]][ri]) + '"' + (i === 0 && x[0] === "s" ? ' style="border-left:2px solid var(--line)"' : "") + ">" +
+          cell(it[0], r[x[0]][it[0]]) + "</td>").join("")).join("") +
+      '<td class="num' + (r.c.sleep != null && r.c.sleep < 6 ? " cell-bad" : rkClass(rk.sleep[ri])) + '">' + (r.c.sleep == null ? "–" : f1(r.c.sleep) + "時間") + "</td></tr>";
+  });
+  if (!rows.length) h += '<tr><td class="l"><span class="note">部員が登録されていません。</span></td></tr>';
+  return h + "</tbody>";
+}
+
+function renderTeam() {
+  const ym = $("#teamMonth").value || THIS_MONTH;
+  const q = monthPace(ym);
+  /* チーム全体は、目標設定の項目（部員全員の合計）と、そこから計算した率 */
+  $("#teamTiles").innerHTML = goalTiles(totals("", ym), teamTarget(ym), q);
+
+  /* みんなのノート */
+  const fd = $("#feedDate").value || TODAY;
+  const canCm = isStaff(ME);
+  let fh = "";
+  const missing = [];
+  MEMBERS.forEach((n) => {
+    const l = LOGS.find((x) => x.name === n && x.date === fd);
+    if (l) fh += noteCard(l, true, canCm); else missing.push(n);
+  });
+  if (!fh) fh = '<div class="empty">' + md(fd) + "（" + dowOf(fd) + "）のノートはまだありません。</div>";
+  if (missing.length && MEMBERS.length - missing.length > 0) {
+    fh += '<p class="note">まだ書いていない部員：' + missing.map(esc).join("、") + "</p>";
+  }
+  if (!canCm && MEMBERS.length - missing.length > 0) fh += '<p class="note">' + (canManage()
+    ? "コメントは、上の「あなた」で指導者を選ぶと書けます。"
+    : "コメントは、指導者ログインした指導者だけが書けます。") + "</p>";
+  $("#feed").innerHTML = fh;
+
+  /* 部員別結果・部員別過程 */
+  $("#resultTable").innerHTML = resultTable(ym, q);
+  $("#teamTable").innerHTML = processTable(ym);
+
+  /* 週別 */
+  const weeks = Array.from(new Set(pick(LOGS, "", ym).map((l) => monOf(l.date)))).sort();
+  const wcols = [["notes", "記入数"], ["days", "練習した人日"], ["swing", "素振り"], ["tee", "ティー"], ["pitch", "投球数"], ["run", "走km"]];
+  let wh = '<thead><tr><th class="l">週</th>' + wcols.map((c) => "<th>" + c[1] + "</th>").join("") + "<th>平均体調</th></tr></thead><tbody>";
+  if (!weeks.length) wh += '<tr><td class="l" colspan="8"><span class="note">この月のノートはまだありません。</span></td></tr>';
+  weeks.forEach((w) => {
+    const to = ymd(new Date(new Date(w + "T00:00:00").getTime() + 6 * 86400000));
+    const c = totals("", "", w, to);
+    wh += '<tr><td class="l">' + md(w) + "〜" + md(to) + "</td>" +
+      wcols.map((x) => '<td class="num">' + f1(c[x[0]]) + "</td>").join("") +
+      '<td class="num">' + (c.cond == null ? "–" : f1(c.cond)) + "</td></tr>";
+  });
+  $("#weekTable").innerHTML = wh + "</tbody>";
+}
+
+/* ══════════════════════════════════════════
+   個人（本人だけが見られるページ）
+   ══════════════════════════════════════════ */
+/* パスコードは画面を開いている間だけ覚えます。ほかのデータとは別に、本人のパスコードでだけ取り出せます */
+let P_PIN = "";
+let P_ITEMS = null;
+let P_REG = null;
+let P_DIRTY = false;
+const P_FIELDS = ["goal", "now", "issue", "report"];
+const P_NAMES = { goal: "目標", now: "現状", issue: "課題", report: "報告" };
+const pItem = (period) => (P_ITEMS || []).find((p) => String(p.period) === period) || {};
+
+function lockPersonal() {
+  P_PIN = ""; P_ITEMS = null; P_REG = null; P_DIRTY = false;
+  $("#p-pin").value = ""; $("#p-pin2").value = "";
+}
+async function renderPersonal() {
+  if (isStaff(ME) || !ME) return;
+  $("#pWho").textContent = ME;
+  const open = !!P_ITEMS;
+  $("#pLock").hidden = open;
+  $("#pBody").hidden = !open;
+  if (!open) {
+    if (P_REG === null) {
+      $("#pLockMsg").textContent = "確認しています…";
+      try { P_REG = !!(await api("personalStatus", { name: ME })).registered; } catch (e) { $("#pLockMsg").textContent = "接続できませんでした"; return; }
+    }
+    $("#p-pin2box").hidden = P_REG;
+    $("#pLockMsg").textContent = P_REG
+      ? ME + " のパスコードを入れてください。"
+      : "はじめて使うので、" + ME + " だけが知っているパスコードを決めてください。ほかの人（指導者も）は、このページを見られません。";
+    $("#pOpen").textContent = P_REG ? "開く" : "パスコードを決めて開く";
+    return;
+  }
+  const yr = $("#pYear").value || THIS_YEAR;
+  $("#pYearTxt").textContent = yr;
+  if (!P_DIRTY) {
+    $("#p-ygoal").value = pItem(yr).goal || "";
+    loadPersonalMonth();
+  }
+  /* その年の各月の記録 */
+  const months = (P_ITEMS || []).filter((p) => String(p.period).length === 7 && String(p.period).slice(0, 4) === yr)
+    .sort((a, b) => String(b.period).localeCompare(String(a.period)));
+  const yg = pItem(yr).goal;
+  $("#pList").innerHTML = (yg ? '<div class="card"><div class="card-h"><b>年間目標</b></div><dl><dt>' + yr + "年</dt><dd>" + esc(yg) + "</dd></dl></div>" : "") +
+    (months.length
+      ? months.map((p) => '<div class="card"><div class="card-h"><b>' + Number(String(p.period).slice(5)) + "月</b>" +
+          ' <button class="btn ghost small" data-popen="' + esc(p.period) + '">開く</button></div><dl>' +
+          P_FIELDS.filter((k) => p[k]).map((k) => "<dt>" + P_NAMES[k] + "</dt><dd>" + esc(p[k]) + "</dd>").join("") + "</dl></div>").join("")
+      : '<div class="empty">この年の月ごとの記録はまだありません。</div>');
+}
+function loadPersonalMonth() {
+  const ym = $("#pMonth").value || THIS_MONTH;
+  const p = pItem(ym);
+  P_FIELDS.forEach((k) => ($("#p-" + k).value = p[k] || ""));
+  $("#p-state").textContent = p.period ? Number(ym.slice(5)) + "月の記録を開いています" : Number(ym.slice(5)) + "月を新しく書きます";
+  $("#p-state").className = "tag" + (p.period ? " blue" : "");
+  P_DIRTY = false;
+}
+async function personalCall(fn, arg, msg) {
+  if (BUSY) return false;
+  BUSY = true; showErr("");
+  let ok = true;
+  try {
+    const r = await api(fn, Object.assign({ name: ME, pin: P_PIN }, arg));
+    P_ITEMS = r.items || [];
+    if (msg) flash(msg);
+  } catch (e) {
+    showErr((e && e.message) || "できませんでした");
+    ok = false;
+  }
+  BUSY = false;
+  return ok;
+}
+
+$("#pOpen").addEventListener("click", async () => {
+  const pin = $("#p-pin").value.trim();
+  if (!/^\d{4,8}$/.test(pin)) { showErr("パスコードは数字4〜8けたで入れてください"); return; }
+  if (!P_REG && pin !== $("#p-pin2").value.trim()) { showErr("確認のパスコードが一致しません"); return; }
+  P_PIN = pin;
+  if (await personalCall("getPersonal", {}, P_REG ? "" : "パスコードを決めました。忘れないようにしてください")) {
+    P_REG = true; P_DIRTY = false;
+    $("#p-pin").value = ""; $("#p-pin2").value = "";
+  } else {
+    P_PIN = ""; P_ITEMS = null;
+  }
+  renderPersonal();
+});
+$("#pLockBtn").addEventListener("click", () => {
+  if (P_DIRTY && !confirm("保存していない内容は消えます。ロックしてよろしいですか？")) return;
+  lockPersonal(); P_REG = true; renderPersonal();
+});
+$("#pSaveYear").addEventListener("click", async () => {
+  const yr = $("#pYear").value || THIS_YEAR;
+  if (await personalCall("savePersonal", { period: yr, goal: $("#p-ygoal").value.trim() }, yr + "年の年間目標を保存しました")) {
+    P_DIRTY = false; renderPersonal();
+  }
+});
+$("#pSaveMonth").addEventListener("click", async () => {
+  const ym = $("#pMonth").value;
+  if (!ym) { showErr("月を選んでください"); return; }
+  const o = { period: ym };
+  P_FIELDS.forEach((k) => (o[k] = $("#p-" + k).value.trim()));
+  if (await personalCall("savePersonal", o, Number(ym.slice(5)) + "月の記録を保存しました")) {
+    P_DIRTY = false; renderPersonal();
+  }
+});
+$("#pBody").addEventListener("input", () => (P_DIRTY = true));
+$("#p-pin").addEventListener("keydown", (e) => { if (e.key === "Enter" && P_REG) $("#pOpen").click(); });
+
+/* ══════════════════════════════════════════
+   目標設定
+   ══════════════════════════════════════════ */
+let TGT_DIRTY = {};
+function renderTargets() {
+  const ym = $("#tgtMonth").value || THIS_MONTH;
+  const raw = (n) => (TARGETS[ym] || {})[n] || {};
+  const gs = viewGroups();
+  let h = '<thead><tr><th class="l" rowspan="2">部員</th>' +
+    gs.map((g) => '<th colspan="' + (g.items.length + g.rates.length) + '" style="text-align:center">' + g.nm + "</th>").join("") +
+    "</tr><tr>" +
+    gs.map((g) => g.items.map((m) => "<th>" + m.nm + (m.cap ? "<br><span class=\"label-sm\">上限</span>" : "") + "</th>").join("") +
+      g.rates.map((r) => '<th>' + r.nm + '<br><span class="label-sm">自動</span></th>').join("")).join("") +
+    "</tr></thead><tbody>";
+  MEMBERS.forEach((n) => {
+    const t = raw(n);
+    h += '<tr data-trow="' + esc(n) + '"><td class="l"><b>' + esc(n) + "</b></td>" +
+      gs.map((g) => g.items.map((m) => {
+        const k = n + "|" + m.key;
+        const v = TGT_DIRTY[k] !== undefined ? TGT_DIRTY[k] : n0(t[m.key]);
+        return '<td><input type="number" min="0" step="' + (m.key === "ip" ? "0.1" : "1") + '" style="width:5.5em;text-align:right" data-tg="' +
+          esc(k) + '" value="' + (v || "") + '"></td>';
+      }).join("") + g.rates.map((r) => '<td class="num calc" data-trate="' + r.key + '"></td>').join("")).join("") +
+      "</tr>";
+  });
+  $("#tgtTable").innerHTML = h + "</tbody>";
+  $$("#tgtTable tr[data-trow]").forEach(updateTargetRates);
+}
+/* 入力中の目標から、率をその場で計算します */
+function updateTargetRates(tr) {
+  const n = tr.dataset.trow;
+  const ym = $("#tgtMonth").value || THIS_MONTH;
+  const s = targetOf(n, ym);
+  tr.querySelectorAll("[data-tg]").forEach((inp) => {
+    const k = inp.dataset.tg.slice(inp.dataset.tg.lastIndexOf("|") + 1);
+    s[k] = k === "ip" ? ipToOuts(inp.value) : n0(inp.value);
+  });
+  GROUPS.forEach((g) => g.rates.forEach((r) => {
+    const td = tr.querySelector('[data-trate="' + r.key + '"]');
+    if (td) td.textContent = r.fmt(rateTarget(r, s));
+  }));
+}
+
+/* ══════════════════════════════════════════
+   保存
+   ══════════════════════════════════════════ */
+async function call(fn, arg, msg) {
+  if (BUSY) return false;
+  BUSY = true;
+  setMode("", "保存しています…");
+  showErr("");
+  let ok = true;
+  try {
+    const d = await api(fn, arg);
+    apply(d);
+    setMode(DEMO ? "demo" : "ok", DEMO ? "お試しモード" : "保存しました");
+    if (msg) flash(msg);
+    renderAll();
+  } catch (e) {
+    showErr((e && e.message) || "保存できませんでした");
+    setMode("bad", "保存に失敗");
+    ok = false;
+  }
+  BUSY = false;
+  return ok;
+}
+
+/* ══════════════════════════════════════════
+   画面の制御
+   ══════════════════════════════════════════ */
+function renderAll() {
+  const staff = isStaff(ME);
+  $$(".po").forEach((e) => (e.hidden = staff));
+  $$(".so").forEach((e) => (e.hidden = !staff));
+  $$(".staffOnly").forEach((e) => (e.hidden = !canManage()));
+  renderMy(); renderInput(); renderGames(); renderTeam(); renderTargets(); renderPersonal(); renderStaffPersonal();
+}
+
+function switchTab(name) {
+  if (!document.querySelector('section[data-sec="' + name + '"]')) name = "my";
+  if (name === "settings" && !canManage()) name = "my";
+  $$("nav.tabs button").forEach((b) => b.setAttribute("aria-selected", String(b.dataset.tab === name)));
+  $$("main section").forEach((s) => (s.hidden = s.dataset.sec !== name));
+  try { localStorage.setItem(TAB_KEY, name); } catch (e) {}
+}
+$$("nav.tabs button").forEach((b) => b.addEventListener("click", () => switchTab(b.dataset.tab)));
+
+/* ノートの保存 */
+$("#saveNote").addEventListener("click", async () => {
+  const date = $("#n-date").value;
+  if (!date) { showErr("日付を入れてください"); return; }
+  const kind = NOTE_KIND, game = kind === "試合";
+  const roles = getRoles();
+  if (!roles.length) { showErr("野手・投手・その他から1つ以上チェックしてください"); return; }
+  const val = (k) => $("#n-" + k).value.trim();
+  const o = {
+    name: ME, date, dow: dowOf(date), kind, roles: roles.join(","),
+    cond: blankOr(val("cond")),
+    sleep: blankOr(val("sleep")),
+    tstart: val("tstart"), tend: val("tend"), mins: timeMins(val("tstart"), val("tend")),
+    report: val("report")
+  };
+  if (!!o.tstart !== !!o.tend) { showErr("練習時間は、はじめとおわりの両方を入れてください"); return; }
+  /* 選んだ区分の欄だけを保存し、ほかの区分の欄は空にします */
+  const items = game ? [] : getItems();
+  if (items.some((it) => !it.w)) { showErr("練習内容が空の行があります。内容を書くか、×で行を消してください"); return; }
+  o.items = JSON.stringify(items);
+  Object.assign(o, game ? { swing: 0, tee: 0, pitch: 0, run: 0 } : itemSums(items));
+  /* 試合の打撃は野手、投手成績は投手にチェックしたときだけ保存します */
+  const use = (k) => game && (BAT_KEYS.indexOf(k) >= 0 ? roles.indexOf("野手") >= 0 : roles.indexOf("投手") >= 0);
+  NUM_GAME.forEach((k) => (o[k] = use(k) ? n0(val(k)) : ""));
+  TEXT_GAME.forEach((k) => (o[k] = game ? val(k) : ""));
+  if (game) {
+    const x = (k) => n0(o[k]);
+    const bad =
+      x("ob") > x("pa") ? "出塁が打席より多くなっています" :
+      x("h") > x("ob") ? "安打が出塁より多くなっています（出塁は安打＋四死球の数です）" :
+      x("xbh") + x("hr") > x("h") ? "長打と本塁打の合計が安打より多くなっています" :
+      x("phr") > x("ph") ? "被本塁打が被安打より多くなっています" :
+      Math.round((x("ip") % 1) * 10) > 2 ? "投球回の小数は .1（1/3）か .2（2/3）で入れてください" : "";
+    if (bad) { showErr(bad); return; }
+  }
+  if (await call("upsertLog", { log: o }, md(date) + " の" + kind + "ノートを保存しました")) loadNote(date);
+});
+$("#noteForm").addEventListener("input", () => (NOTE_DIRTY = true));
+$("#n-kind").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-kind]");
+  if (!b || b.dataset.kind === NOTE_KIND) return;
+  setKind(b.dataset.kind);
+  NOTE_DIRTY = true;
+});
+$("#n-roles").addEventListener("change", applyRoles);
+/* はじめとおわりから、練習した時間をその場で出します */
+function showTimeLen() {
+  const m = timeMins($("#n-tstart").value, $("#n-tend").value);
+  $("#n-tlen").textContent = m ? "合計 " + minsTxt(m) : "—";
+}
+$("#n-tstart").addEventListener("input", showTimeLen);
+$("#n-tend").addEventListener("input", showTimeLen);
+$("#addItem").addEventListener("click", () => {
+  $("#n-items").insertAdjacentHTML("beforeend", itemRow());
+  $("#n-items .irow:last-child .iw").focus();
+});
+$("#n-items").addEventListener("click", (e) => {
+  const x = e.target.closest("[data-ix]");
+  if (!x) return;
+  x.closest(".irow").remove();
+  if (!$("#n-items .irow")) $("#n-items").innerHTML = itemRow();
+  NOTE_DIRTY = true;
+});
+/* いちばん新しい練習・自主練ノートの内容を写します（量と備考は空に） */
+$("#copyItems").addEventListener("click", () => {
+  const date = $("#n-date").value || TODAY;
+  const prev = LOGS.filter((l) => l.name === ME && l.kind !== "試合" && l.date < date && l.items.length)
+    .sort((a, b) => b.date.localeCompare(a.date))[0];
+  if (!prev) { flash("コピーできる前回の練習内容がありません"); return; }
+  if (getItems().length && !confirm("いま入っている練習内容を、" + md(prev.date) + " の内容に置き換えます。よろしいですか？")) return;
+  setItems(prev.items.map((it) => ({ w: it.w, q: it.q, m: "" })));
+  NOTE_DIRTY = true;
+  flash(md(prev.date) + " の練習内容をコピーしました。量を今日の分に直してください");
+});
+
+/* 目標の保存 */
+$("#saveTargets").addEventListener("click", async () => {
+  const ym = $("#tgtMonth").value || THIS_MONTH;
+  const keys = Object.keys(TGT_DIRTY);
+  if (!keys.length) { flash("変更された欄がありません"); return; }
+  /* 触った欄だけを送ります */
+  const month = {};
+  keys.forEach((k) => {
+    const [name, key] = k.split("|");
+    month[name] = Object.assign({}, month[name], { [key]: TGT_DIRTY[k] });
+  });
+  TGT_DIRTY = {};
+  await call("saveTargets", { targets: { [ym]: month } }, Number(ym.slice(5)) + "月の目標を保存しました（" + keys.length + "項目）");
+});
+
+/* 一覧の操作 */
+document.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-lopen],[data-ldel],[data-sort],[data-bsort],[data-psort],[data-rsort],[data-cmsave],[data-popen]");
+  if (!t) return;
+  if (t.dataset.rsort) {
+    const k = t.dataset.rsort;
+    RES_SORT = { key: k, dir: RES_SORT.key === k ? -RES_SORT.dir : -1 };
+    renderTeam();
+    return;
+  }
+  if (t.dataset.popen) {
+    if (P_DIRTY && !confirm("保存していない内容は消えます。開いてよろしいですか？")) return;
+    $("#pMonth").value = t.dataset.popen;
+    loadPersonalMonth();
+    $("#pMonthForm").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  if (t.dataset.psort) {
+    const k = t.dataset.psort;
+    PIT_SORT = { key: k, dir: PIT_SORT.key === k ? -PIT_SORT.dir : -1 };
+    renderGames();
+    return;
+  }
+  if (t.dataset.sort) {
+    const k = t.dataset.sort;
+    SORT = { key: k, dir: SORT.key === k ? -SORT.dir : -1 };
+    renderTeam();
+    return;
+  }
+  if (t.dataset.bsort) {
+    const k = t.dataset.bsort;
+    BAT_SORT = { key: k, dir: BAT_SORT.key === k ? -BAT_SORT.dir : -1 };
+    renderGames();
+    return;
+  }
+  if (t.dataset.lopen) {
+    if (NOTE_DIRTY && !confirm("書きかけの内容は消えます。開いてよろしいですか？")) return;
+    $("#n-date").value = t.dataset.lopen;
+    loadNote(t.dataset.lopen);
+    switchTab("input");
+    $("#noteForm").scrollIntoView({ behavior: "smooth", block: "start" });
+    return;
+  }
+  if (t.dataset.ldel) {
+    if (!confirm("このノートを削除します。よろしいですか？")) return;
+    if (await call("deleteLog", { id: t.dataset.ldel }, "ノートを削除しました")) loadNote($("#n-date").value);
+    return;
+  }
+  if (t.dataset.cmsave) {
+    const id = t.dataset.cmsave;
+    const box = document.querySelector('[data-cm="' + id + '"]');
+    CM_DIRTY = false;
+    await call("setComment", { id, comment: box ? box.value.trim() : "", by: ME }, "コメントを送りました");
+    return;
+  }
+});
+document.addEventListener("input", (e) => {
+  const el = e.target;
+  if (!el.dataset) return;
+  if (el.dataset.cm) CM_DIRTY = true;
+  if (el.dataset.tg) {
+    TGT_DIRTY[el.dataset.tg] = n0(el.value);
+    updateTargetRates(el.closest("tr"));
+  }
+});
+
+/* 入力欄の変更 */
+document.addEventListener("change", (e) => {
+  const el = e.target;
+  if (el.id === "who") {
+    if ((NOTE_DIRTY || P_DIRTY) && !confirm("書きかけの内容は消えます。切り替えてよろしいですか？")) { el.value = ME; return; }
+    ME = el.value;
+    try { localStorage.setItem(WHO_KEY, ME); } catch (err) {}
+    CM_DIRTY = false;
+    /* 人が変わったら、個人のページはロックします */
+    lockPersonal();
+    loadNote($("#n-date").value || TODAY);
+    renderAll();
+    if (isStaff(ME)) switchTab("team");
+    return;
+  }
+  if (el.id === "n-date") {
+    if (NOTE_DIRTY && !confirm("この日付のノートを読み込みますか？\n（キャンセルすると、書きかけの内容のまま日付だけ変わります）")) {
+      $("#n-state").textContent = "書きかけ（" + md(el.value) + " に保存します）";
+      $("#n-state").className = "tag";
+      return;
+    }
+    loadNote(el.value);
+    return;
+  }
+  if (el.id === "myMonth") { renderMy(); return; }
+  if (el.id === "histMonth") { renderInput(); return; }
+  if (el.id === "gPer") { renderGames(); return; }
+  if (el.id === "teamMonth" || el.id === "feedDate") { renderTeam(); return; }
+  if (el.id === "tgtMonth") { TGT_DIRTY = {}; renderTargets(); return; }
+  if (el.id === "pYear" || el.id === "pMonth") {
+    if (P_DIRTY && !confirm("保存していない内容は消えます。切り替えてよろしいですか？")) return;
+    if (el.id === "pMonth" && el.value) $("#pYear").value = el.value.slice(0, 4);
+    P_DIRTY = false;
+    renderPersonal();
+    return;
+  }
+  if (el.dataset.tg) { TGT_DIRTY[el.dataset.tg] = n0(el.value); return; }
+  /* 野手・投手の表示切り替え。どちらか1つは残します */
+  if (el.dataset.view) {
+    VIEW[el.dataset.view] = el.checked;
+    if (!VIEW.bat && !VIEW.pit) VIEW[el.dataset.view === "bat" ? "pit" : "bat"] = true;
+    try { localStorage.setItem(VIEW_KEY, JSON.stringify(VIEW)); } catch (err) {}
+    renderVsel(); renderMy(); renderTeam(); renderTargets();
+    return;
+  }
+});
+
+/* ══════════════════════════════════════════
+   設定（指導者・オーナー）
+   ══════════════════════════════════════════ */
+/* 名前の行。data-old に、もとの名前（新しく足した人は空）を持ちます */
+function nameRow(name, old) {
+  return '<div class="nrow"><input type="text" class="nm" data-old="' + esc(old || "") + '" value="' + esc(name || "") + '" placeholder="名前">' +
+    '<button type="button" class="btn ghost small" data-nrm title="この行を消す">消す</button></div>';
+}
+async function loadSettings() {
+  if (!canManage()) return;
+  try {
+    const s = await api("getSettings");
+    $("#st-name").value = s.name;
+    $("#st-code").value = s.code;
+    $("#st-pass").value = ""; $("#st-spass").value = "";
+    $("#st-members").innerHTML = s.members.map((n) => nameRow(n, n)).join("");
+    $("#st-staff").innerHTML = s.staff.map((n) => nameRow(n, n)).join("");
+  } catch (e) { showErr(e.message); }
+}
+const readNames = (sel) => $$(sel + " .nm").map((i) => ({ old: i.dataset.old, name: i.value.trim() })).filter((m) => m.name);
+$("#st-addMember").addEventListener("click", () => { $("#st-members").insertAdjacentHTML("beforeend", nameRow()); $("#st-members .nrow:last-child input").focus(); });
+$("#st-addStaff").addEventListener("click", () => { $("#st-staff").insertAdjacentHTML("beforeend", nameRow()); $("#st-staff .nrow:last-child input").focus(); });
+$("#st-save").addEventListener("click", async () => {
+  const members = readNames("#st-members"), staff = readNames("#st-staff");
+  const removed = MEMBERS.filter((n) => !members.some((m) => m.old === n)).length +
+    STAFF.filter((n) => !staff.some((m) => m.old === n)).length;
+  if (removed && !confirm("消した部員・指導者は画面に出なくなります（記録は残ります）。保存してよろしいですか？")) return;
+  if (($("#st-pass").value || $("#st-spass").value) && !confirm("パスワードを変えると、そのパスワードでログインしている端末はログインし直しになります。よろしいですか？")) return;
+  if (BUSY) return;
+  BUSY = true; showErr("");
+  try {
+    const r = await api("saveSettings", {
+      name: $("#st-name").value.trim(), code: $("#st-code").value.trim(),
+      password: $("#st-pass").value, staffPassword: $("#st-spass").value,
+      members, staff
+    });
+    setToken(r.token);
+    flash("設定を保存しました");
+    const d = await api("getData");
+    apply(d);
+    fillWho();
+    renderAll();
+    loadSettings();
+  } catch (e) { showErr(e.message); }
+  BUSY = false;
+});
+
+/* ── 指導者・オーナーが見る、選手の個人ページ ── */
+let SP_DATA = null;
+async function renderStaffPersonal() {
+  if (!canManage() || !isStaff(ME)) return;
+  const sel = $("#sp-who");
+  const keep = sel.value;
+  sel.innerHTML = MEMBERS.map((n) => '<option value="' + esc(n) + '">' + esc(n) + "</option>").join("");
+  sel.value = MEMBERS.indexOf(keep) >= 0 ? keep : MEMBERS[0] || "";
+  if (!sel.value) { $("#sp-body").innerHTML = '<div class="empty">部員が登録されていません。</div>'; return; }
+  if (!SP_DATA || SP_DATA.name !== sel.value) {
+    try { SP_DATA = Object.assign({ name: sel.value }, await api("staffPersonal", { name: sel.value })); }
+    catch (e) { $("#sp-body").innerHTML = '<div class="empty">' + esc(e.message) + "</div>"; return; }
+  }
+  const yr = $("#sp-year").value || THIS_YEAR;
+  const items = SP_DATA.items || [];
+  const yg = items.find((p) => String(p.period) === yr);
+  const months = items.filter((p) => String(p.period).length === 7 && String(p.period).slice(0, 4) === yr)
+    .sort((a, b) => String(b.period).localeCompare(String(a.period)));
+  $("#sp-body").innerHTML = '<div class="cards">' +
+    '<div class="card"><div class="card-h"><b>' + yr + "年の年間目標</b></div>" +
+    (yg && yg.goal ? "<dl><dt>年間目標</dt><dd>" + esc(yg.goal) + "</dd></dl>" : '<p class="note">まだ書かれていません。</p>') + "</div>" +
+    months.map((p) => '<div class="card"><div class="card-h"><b>' + Number(String(p.period).slice(5)) + "月</b></div><dl>" +
+      P_FIELDS.filter((k) => p[k]).map((k) => "<dt>" + P_NAMES[k] + "</dt><dd>" + esc(p[k]) + "</dd>").join("") + "</dl></div>").join("") +
+    (months.length ? "" : '<div class="empty">この年の月ごとの記録はまだありません。</div>') + "</div>";
+  $("#sp-pin").textContent = SP_DATA.registered ? "パスコード：設定済み" : "パスコード：まだ決めていません";
+  $("#sp-reset").hidden = !SP_DATA.registered;
+}
+$("#sp-who").addEventListener("change", () => { SP_DATA = null; renderStaffPersonal(); });
+$("#sp-year").addEventListener("change", () => renderStaffPersonal());
+$("#sp-reset").addEventListener("click", async () => {
+  const n = $("#sp-who").value;
+  if (!confirm(n + " のパスコードをリセットします。書いた内容は残り、次に開くときに本人が決め直します。よろしいですか？")) return;
+  try {
+    SP_DATA = Object.assign({ name: n }, await api("resetPin", { name: n }));
+    flash(n + " のパスコードをリセットしました");
+    renderStaffPersonal();
+  } catch (e) { showErr(e.message); }
+});
+
+/* ══════════════════════════════════════════
+   画面の切り替え（ログイン・オーナー・組織・アプリ）
+   ══════════════════════════════════════════ */
+function showScreen(which) {
+  $("#gate").hidden = which !== "gate";
+  $("#ownerHome").hidden = which !== "owner";
+  $("#orgHome").hidden = which !== "org";
+  $("#appMain").hidden = which !== "app";
+  $("#appNav").hidden = which !== "app";
+  $("#whoBox").hidden = which !== "app";
+  $("#staffBox").hidden = true;
+  $("#logoutBtn").hidden = which === "gate";
+  /* 組織の管理者とオーナーは、チームの中から「チーム一覧」へ。オーナーはさらに「組織一覧」へ */
+  $("#teamsBtn").hidden = !((ROLE === "orgadmin" || ROLE === "owner") && which === "app");
+  $("#orgsBtn").hidden = !(ROLE === "owner" && which !== "owner" && which !== "gate");
+  $("#staffBtn").hidden = !(ROLE === "team" && which === "app");
+  const rp = $("#rolePill");
+  rp.hidden = which === "gate";
+  rp.textContent = ROLE_NAMES[ROLE] || "";
+  rp.className = "pill role " + ROLE;
+  $("#teamTxt").textContent = which === "app" ? [TEAM.orgName, TEAM.name].filter(Boolean).join(" ") : which === "org" ? ORG_NAME : "";
+  if (which === "gate") showGate("login");
+  fitNav();
+}
+/* ヘッダーが2行になっても、タブがその下にくるようにします */
+function fitNav() { $("#appNav").style.top = $("header").offsetHeight + "px"; }
+window.addEventListener("resize", fitNav);
+
+/* ログイン画面の中の切り替え（ログイン・新規登録・お忘れの方へ） */
+function showGate(which) {
+  $("#loginBox").hidden = which !== "login";
+  $("#signupBox").hidden = which !== "signup";
+  $("#forgotBox").hidden = which !== "forgot";
+  window.scrollTo(0, 0);
+}
+
+function logout(msg) {
+  setToken(""); setSel("", "");
+  ROLE = ""; TEAM = { id: "", name: "", code: "", orgName: "" };
+  MEMBERS = []; STAFF = []; LOGS = []; GAMES = []; TARGETS = {};
+  lockPersonal(); SP_DATA = null;
+  showScreen("gate");
+  if (msg) showErr(msg);
+}
+
+async function enterApp() {
+  const d = await api("getData");
+  apply(d);
+  SP_DATA = null;
+  lockPersonal();
+  fillWho();
+  loadNote(TODAY);
+  renderAll();
+  showScreen("app");
+  let tab = isStaff(ME) ? "team" : "my";
+  try { tab = localStorage.getItem(TAB_KEY) || tab; } catch (e) {}
+  switchTab(tab);
+  if (canManage()) loadSettings();
+}
+
+/* ── 問い合わせの一覧（オーナーと組織の管理者） ── */
+function inqHtml(list, showOrg) {
+  if (!list.length) return '<p class="note">対応待ちの問い合わせはありません。</p>';
+  return list.map((q) => '<div class="inq"><div class="meta">' + esc(q.created) +
+    (showOrg ? "・組織コード " + esc(q.orgCode || "（なし）") : "") + (q.teamCode ? "・チームコード " + esc(q.teamCode) : "") + "</div>" +
+    "<b>" + esc(q.name) + "</b>（" + esc(q.contact) + "）<br>" + esc(q.message).replace(/\n/g, "<br>") +
+    '<div class="actions" style="margin-top:6px"><span class="spacer"></span><button class="btn ghost small" data-inqdone="' + esc(q.id) + '">対応済みにする</button></div></div>').join("");
+}
+function teamRows(teams) {
+  let h = '<thead><tr><th class="l">チーム</th><th class="l">チームコード</th><th>部員</th><th>指導者</th><th>ノート</th><th>最後の記入</th><th></th></tr></thead><tbody>';
+  if (!teams.length) h += '<tr><td class="l" colspan="7"><span class="note">まだチームがありません。</span></td></tr>';
+  teams.forEach((t) => {
+    h += '<tr><td class="l"><b>' + esc(t.name) + '</b></td><td class="l">' + esc(t.code) + '</td><td class="num">' + t.members +
+      '</td><td class="num">' + t.staff + '</td><td class="num">' + t.notes + '</td><td class="num">' + (t.last ? md(t.last) : "–") +
+      '</td><td><button class="btn small" data-oteam="' + esc(t.id) + '">開く</button></td></tr>';
+  });
+  return h + "</tbody>";
+}
+
+/* ── オーナーの画面：申し込み・問い合わせ・組織一覧 ── */
+async function showOwnerHome() {
+  setSel("", "");
+  showScreen("owner");
+  try {
+    const d = await api("ownerHome");
+    $("#reqList").innerHTML = d.requests.length
+      ? d.requests.map((r) => '<div class="inq"><div class="meta">' + esc(r.created) + "</div>" +
+          "<b>" + esc(r.orgName) + "</b>（組織コード <code>" + esc(r.orgCode) + "</code>）<br>" +
+          "管理者：" + esc(r.adminName) + "（" + esc(r.contact) + "）" + (r.note ? "<br>" + esc(r.note) : "") +
+          '<div class="actions" style="margin-top:6px"><span class="spacer"></span>' +
+          '<button class="btn danger small" data-reject="' + esc(r.id) + '">却下</button>' +
+          '<button class="btn small" data-approve="' + esc(r.id) + '">承認する</button></div></div>').join("")
+      : '<p class="note">新しい申し込みはありません。</p>';
+    $("#ownerInq").innerHTML = inqHtml(d.inquiries, true);
+    let h = '<thead><tr><th class="l">組織</th><th class="l">組織コード</th><th class="l">管理者</th><th>チーム</th><th class="l">チーム名</th><th></th></tr></thead><tbody>';
+    if (!d.orgs.length) h += '<tr><td class="l" colspan="6"><span class="note">まだ組織がありません。</span></td></tr>';
+    d.orgs.forEach((g) => {
+      h += '<tr><td class="l"><b>' + esc(g.name) + '</b></td><td class="l">' + esc(g.code) + '</td><td class="l">' +
+        (g.adminName ? esc(g.adminName) : "–") + (g.hasAdmin ? "" : ' <span class="tag bad">パスワード未設定</span>') +
+        '</td><td class="num">' + g.teams.length + '</td><td class="l"><span class="note">' + g.teams.map((t) => esc(t.name)).join("、") +
+        '</span></td><td><button class="btn small" data-oorg="' + esc(g.id) + '">開く</button></td></tr>';
+    });
+    $("#orgList").innerHTML = h + "</tbody>";
+  } catch (e) { showErr(e.message); }
+}
+
+/* ── 組織の画面：チーム一覧・チームを作る・問い合わせ・組織の設定 ── */
+let ORG_NAME = "";
+async function showOrgHome() {
+  setSel(SEL.org, "");
+  try {
+    const d = await api("orgHome");
+    ORG_NAME = d.org.name;
+    showScreen("org");
+    $("#oh-title").textContent = d.org.name;
+    $("#teamList").innerHTML = teamRows(d.teams);
+    $("#orgInq").innerHTML = inqHtml(d.inquiries, false);
+    $("#os-name").value = d.org.name;
+    $("#os-code").value = d.org.code;
+    $("#os-admin").value = d.org.adminName || "";
+    $("#os-contact").value = d.org.contact || "";
+    $("#os-pass").value = "";
+  } catch (e) {
+    if (ROLE === "owner") { await showOwnerHome(); }
+    showErr(e.message);
+  }
+}
+
+/* ログインしたあと、役割に合わせて画面を出します */
+async function afterLogin() {
+  showErr("");
+  try {
+    if (ROLE === "owner" && !SEL.org && !SEL.team) { await showOwnerHome(); return; }
+    if ((ROLE === "owner" || ROLE === "orgadmin") && !SEL.team) { await showOrgHome(); return; }
+    await enterApp();
+  } catch (e) {
+    if (ROLE === "owner" || ROLE === "orgadmin") { setSel(SEL.org, ""); await (ROLE === "owner" && !SEL.org ? showOwnerHome() : showOrgHome()); showErr(e.message); }
+    else if (TOKEN) { showErr("サーバーに接続できませんでした：" + e.message); }
+  }
+}
+
+$("#loginBtn").addEventListener("click", async () => {
+  if (BUSY) return;
+  BUSY = true; showErr("");
+  let r = null;
+  try {
+    r = await api("login", { org: $("#g-org").value.trim(), code: $("#g-code").value.trim(), password: $("#g-pass").value });
+  } catch (e) { showErr(e.message); }
+  BUSY = false;
+  if (!r) return;
+  setToken(r.token); ROLE = r.role; setSel("", "");
+  $("#g-pass").value = "";
+  try { localStorage.removeItem(WHO_KEY); } catch (e) {}
+  await afterLogin();
+});
+$("#g-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#loginBtn").click(); });
+$("#toSignup").addEventListener("click", () => { showErr(""); showGate("signup"); });
+$("#toForgot").addEventListener("click", () => { showErr(""); showGate("forgot"); });
+
+/* 新規登録の申し込み */
+$("#signupBtn").addEventListener("click", async () => {
+  if ($("#su-pass").value !== $("#su-pass2").value) { showErr("確認のパスワードが一致しません"); return; }
+  if (BUSY) return;
+  BUSY = true; showErr("");
+  try {
+    await api("applyOrg", {
+      orgName: $("#su-org").value, orgCode: $("#su-code").value, adminName: $("#su-name").value,
+      contact: $("#su-contact").value, password: $("#su-pass").value, note: $("#su-note").value
+    });
+    ["#su-org", "#su-code", "#su-name", "#su-contact", "#su-pass", "#su-pass2", "#su-note"].forEach((s) => ($(s).value = ""));
+    showGate("login");
+    flash("申し込みを受け付けました。承認されたら、ご入力の連絡先にお知らせします");
+  } catch (e) { showErr(e.message); }
+  BUSY = false;
+});
+/* お忘れの方へ：問い合わせ */
+$("#forgotBtn").addEventListener("click", async () => {
+  if (BUSY) return;
+  BUSY = true; showErr("");
+  try {
+    await api("inquire", {
+      orgCode: $("#fg-org").value, teamCode: $("#fg-team").value, name: $("#fg-name").value,
+      contact: $("#fg-contact").value, message: $("#fg-msg").value
+    });
+    ["#fg-org", "#fg-team", "#fg-name", "#fg-contact", "#fg-msg"].forEach((s) => ($(s).value = ""));
+    showGate("login");
+    flash("問い合わせを送りました。ご入力の連絡先にお返事します");
+  } catch (e) { showErr(e.message); }
+  BUSY = false;
+});
+
+$("#logoutBtn").addEventListener("click", () => {
+  if ((NOTE_DIRTY || P_DIRTY) && !confirm("書きかけの内容は消えます。ログアウトしてよろしいですか？")) return;
+  logout();
+});
+$("#teamsBtn").addEventListener("click", () => showOrgHome());
+$("#orgsBtn").addEventListener("click", () => showOwnerHome());
+$("#staffBtn").addEventListener("click", () => { $("#staffBox").hidden = false; $("#s-pass").focus(); });
+$("#staffCancel").addEventListener("click", () => { $("#staffBox").hidden = true; $("#s-pass").value = ""; });
+$("#staffLoginBtn").addEventListener("click", async () => {
+  try {
+    const r = await api("staffLogin", { password: $("#s-pass").value });
+    setToken(r.token); ROLE = r.role;
+    $("#s-pass").value = "";
+    try { localStorage.removeItem(WHO_KEY); } catch (e) {}
+    flash("指導者としてログインしました");
+    await enterApp();
+  } catch (e) { showErr(e.message); }
+});
+$("#s-pass").addEventListener("keydown", (e) => { if (e.key === "Enter") $("#staffLoginBtn").click(); });
+
+$("#createTeamBtn").addEventListener("click", async () => {
+  const lines = (sel) => $(sel).value.split("\n").map((s) => s.trim()).filter(Boolean);
+  try {
+    await api("createTeam", {
+      name: $("#nt-name").value.trim(), code: $("#nt-code").value.trim(),
+      password: $("#nt-pass").value, staffPassword: $("#nt-spass").value,
+      members: lines("#nt-members"), staff: lines("#nt-staff")
+    });
+    flash("チーム「" + $("#nt-name").value.trim() + "」を作りました");
+    ["#nt-name", "#nt-code", "#nt-pass", "#nt-spass", "#nt-members"].forEach((s) => ($(s).value = ""));
+    showOrgHome();
+  } catch (e) { showErr(e.message); }
+});
+$("#saveOrgBtn").addEventListener("click", async () => {
+  if ($("#os-pass").value && !confirm("管理者パスワードを変えると、ほかの端末の管理者ログインはやり直しになります。よろしいですか？")) return;
+  try {
+    const r = await api("saveOrg", {
+      name: $("#os-name").value, code: $("#os-code").value, adminName: $("#os-admin").value,
+      contact: $("#os-contact").value, password: $("#os-pass").value
+    });
+    setToken(r.token);
+    flash("組織の設定を保存しました");
+    showOrgHome();
+  } catch (e) { showErr(e.message); }
+});
+$("#createOrgBtn").addEventListener("click", async () => {
+  try {
+    await api("createOrg", {
+      name: $("#no-name").value, code: $("#no-code").value, adminName: $("#no-admin").value,
+      contact: $("#no-contact").value, password: $("#no-pass").value
+    });
+    flash("組織「" + $("#no-name").value.trim() + "」を作りました");
+    ["#no-name", "#no-code", "#no-admin", "#no-contact", "#no-pass"].forEach((s) => ($(s).value = ""));
+    showOwnerHome();
+  } catch (e) { showErr(e.message); }
+});
+
+document.addEventListener("click", async (e) => {
+  const t = e.target.closest("[data-oteam],[data-oorg],[data-approve],[data-reject],[data-inqdone],[data-nrm],[data-back]");
+  if (!t) return;
+  if (t.dataset.oteam) {
+    setSel(SEL.org, t.dataset.oteam);
+    try { localStorage.removeItem(WHO_KEY); } catch (err) {}
+    try { await enterApp(); } catch (err) { showErr(err.message); showOrgHome(); }
+    return;
+  }
+  if (t.dataset.oorg) { setSel(t.dataset.oorg, ""); showOrgHome(); return; }
+  if (t.dataset.approve) {
+    if (!confirm("この申し込みを承認して、組織を作ります。よろしいですか？")) return;
+    try { await api("approveRequest", { id: t.dataset.approve }); flash("承認しました。申し込みの連絡先に、組織コードでログインできることを伝えてください"); showOwnerHome(); }
+    catch (err) { showErr(err.message); }
+    return;
+  }
+  if (t.dataset.reject) {
+    if (!confirm("この申し込みを却下します。よろしいですか？")) return;
+    try { await api("rejectRequest", { id: t.dataset.reject }); flash("却下しました"); showOwnerHome(); }
+    catch (err) { showErr(err.message); }
+    return;
+  }
+  if (t.dataset.inqdone) {
+    try {
+      await api("closeInquiry", { id: t.dataset.inqdone });
+      flash("対応済みにしました");
+      if (!$("#ownerHome").hidden) showOwnerHome(); else showOrgHome();
+    } catch (err) { showErr(err.message); }
+    return;
+  }
+  if (t.dataset.nrm !== undefined) { t.closest(".nrow").remove(); return; }
+  if (t.dataset.back !== undefined) { showErr(""); showGate("login"); }
+});
+
+/* ══════════════════════════════════════════
+   起動
+   ══════════════════════════════════════════ */
+function normLog(l) {
+  const o = Object.assign({}, l);
+  NUM_LOG.forEach((k) => (o[k] = n0(o[k])));
+  TEXT_GAME.concat(["report", "comment", "commentBy", "kind", "tstart", "tend"]).forEach((k) => (o[k] = o[k] == null ? "" : String(o[k])));
+  o.mins = n0(o.mins);
+  o.items = parseItems(o.items);
+  o.roles = String(o.roles || "").split(",").filter((r) => ROLES.indexOf(r) >= 0);
+  if (KINDS.indexOf(o.kind) < 0) o.kind = "練習";
+  o.date = String(o.date || "");
+  return o;
+}
+function apply(d) {
+  MEMBERS = (d && d.members) || [];
+  STAFF = (d && d.staff) || [];
+  LOGS = ((d && d.logs) || []).map(normLog);
+  /* 試合成績は、区分が「試合」のノートから集計します */
+  GAMES = LOGS.filter((l) => l.kind === "試合");
+  TARGETS = (d && d.targets) || {};
+  if (d && d.role) ROLE = d.role;
+  if (d && d.team) {
+    TEAM = d.team;
+    /* オーナーと組織の管理者が「チーム一覧」に戻れるよう、チームの組織を覚えます */
+    if (ROLE === "owner" || ROLE === "orgadmin") setSel(TEAM.orgId, TEAM.id);
+  }
+  $("#teamTxt").textContent = [TEAM.orgName, TEAM.name].filter(Boolean).join(" ");
+}
+/* 指導者の名前は、指導者・組織の管理者・オーナーとしてログインしたときだけ選べます */
+function fillWho() {
+  const opt = (n) => '<option value="' + esc(n) + '">' + esc(n) + "</option>";
+  const staff = canManage() ? STAFF : [];
+  $("#who").innerHTML = '<optgroup label="選手">' + MEMBERS.map(opt).join("") + "</optgroup>" +
+    (staff.length ? '<optgroup label="指導者">' + staff.map(opt).join("") + "</optgroup>" : "");
+  let w = "";
+  try { w = localStorage.getItem(WHO_KEY) || ""; } catch (e) {}
+  const all = MEMBERS.concat(staff);
+  ME = all.indexOf(w) >= 0 ? w : (canManage() ? staff[0] : MEMBERS[0]) || all[0] || "";
+  $("#who").value = ME;
+}
+
+async function boot() {
+  $("#n-kind").innerHTML = KINDS.map((k) => '<button type="button" data-kind="' + k + '" aria-pressed="false">' + k + "</button>").join("");
+  $("#n-cond").innerHTML = '<option value="">選ぶ</option>' + CONDS.map((c) => '<option value="' + c.v + '">' + c.v + " " + c.nm + "</option>").join("");
+  [["#myMonth", THIS_MONTH], ["#histMonth", THIS_MONTH], ["#teamMonth", THIS_MONTH], ["#tgtMonth", THIS_MONTH], ["#feedDate", TODAY], ["#n-date", TODAY]]
+    .forEach(([sel, v]) => ($(sel).value = v));
+  renderVsel();
+  $$(".rank-note").forEach((e) => (e.innerHTML = RANK_NOTE));
+  const y0 = Number(THIS_YEAR);
+  const years = [y0 + 1, y0, y0 - 1, y0 - 2].map((y) => '<option value="' + y + '">' + y + "年</option>").join("");
+  $("#pYear").innerHTML = years; $("#pYear").value = THIS_YEAR;
+  $("#sp-year").innerHTML = years; $("#sp-year").value = THIS_YEAR;
+  $("#pMonth").value = THIS_MONTH;
+  $("#n-roles").innerHTML = ROLES.map((r) => '<label><input type="checkbox" value="' + r + '"> ' + r + "</label>").join("");
+  $("#menuList").innerHTML = MENU_PRESETS.map((m) => '<option value="' + m + '">').join("");
+  if (DEMO) {
+    $("#demo").hidden = false;
+    $("#demo").innerHTML = "<b>お試しモードです。</b>入力はこの端末のブラウザにだけ保存されます。" +
+      "部員：組織 <code>demo</code>・チーム <code>baseball</code>・パスワード <code>1234</code>（指導者は <code>5678</code>）。" +
+      "組織の管理者：組織 <code>demo</code>・チーム空欄・<code>admin1234</code>。" +
+      "オーナー：組織 <code>owner</code>・チーム空欄・<code>owner1234</code>。";
+  }
+  setMode(DEMO ? "demo" : "ok", DEMO ? "お試しモード" : "接続中");
+
+  if (!TOKEN) { showScreen("gate"); return; }
+  /* 前にログインした token の役割（先頭の言葉）で、どの画面から始めるかを決めます */
+  ROLE = TOKEN.split(".")[0];
+  await afterLogin();
+}
+
+/* ほかの人の入力を取り込みます。書きかけのときは待ちます */
+if (!DEMO) setInterval(async () => {
+  if ($("#appMain").hidden || BUSY || NOTE_DIRTY || P_DIRTY || CM_DIRTY || Object.keys(TGT_DIRTY).length) return;
+  if (document.activeElement && /INPUT|TEXTAREA|SELECT/.test(document.activeElement.tagName)) return;
+  try {
+    const d = await api("getData");
+    apply(d);
+    renderAll();
+  } catch (e) {}
+}, 30000);
+boot();
+</script>
+</body>
+</html>
