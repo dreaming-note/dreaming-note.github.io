@@ -1977,6 +1977,7 @@ function teamRows(teams) {
 }
 
 /* ── オーナーの画面：申し込み・問い合わせ・組織一覧 ── */
+let OWNER_ORGS = [];
 async function showOwnerHome() {
   setSel("", "");
   showScreen("owner");
@@ -1997,8 +1998,10 @@ async function showOwnerHome() {
       h += '<tr><td class="l"><b>' + esc(g.name) + '</b></td><td class="l">' + esc(g.code) + '</td><td class="l">' +
         (g.adminName ? esc(g.adminName) : "–") + (g.hasAdmin ? "" : ' <span class="tag bad">パスワード未設定</span>') +
         '</td><td class="num">' + g.teams.length + '</td><td class="l"><span class="note">' + g.teams.map((t) => esc(t.name)).join("、") +
-        '</span></td><td><button class="btn small" data-oorg="' + esc(g.id) + '">開く</button></td></tr>';
+        '</span></td><td style="white-space:nowrap"><button class="btn small" data-oorg="' + esc(g.id) + '">開く</button> ' +
+        '<button class="btn danger small" data-odel="' + esc(g.id) + '">削除</button></td></tr>';
     });
+    OWNER_ORGS = d.orgs;
     $("#orgList").innerHTML = h + "</tbody>";
   } catch (e) { showErr(e.message); }
 }
@@ -2146,8 +2149,27 @@ $("#createOrgBtn").addEventListener("click", async () => {
 });
 
 document.addEventListener("click", async (e) => {
-  const t = e.target.closest("[data-oteam],[data-oorg],[data-approve],[data-reject],[data-inqdone],[data-nrm],[data-back]");
+  const t = e.target.closest("[data-oteam],[data-oorg],[data-odel],[data-approve],[data-reject],[data-inqdone],[data-nrm],[data-back]");
   if (!t) return;
+  /* 組織の削除。1回目は消えるものを示して確認、2回目は組織コードを手で入れてもらいます */
+  if (t.dataset.odel) {
+    const g = OWNER_ORGS.find((x) => x.id === t.dataset.odel);
+    if (!g) return;
+    const notes = g.teams.reduce((a, x) => a + x.notes, 0);
+    if (!confirm("【1／2】組織「" + g.name + "」（組織コード " + g.code + "）を削除します。\n\n" +
+      "・チーム " + g.teams.length + " 件" + (g.teams.length ? "（" + g.teams.map((x) => x.name).join("、") + "）" : "") + "\n" +
+      "・ノート " + notes + " 件と、目標・個人ページ・パスコードなどの記録すべて\n\n" +
+      "が消え、元に戻せません。続けますか？")) return;
+    const typed = prompt("【2／2】確認のため、削除する組織の組織コード「" + g.code + "」を入力してください。");
+    if (typed === null) return;
+    if (typed.trim() !== g.code) { showErr("組織コードが一致しないため、削除しませんでした"); return; }
+    try {
+      const r = await api("deleteOrg", { org: g.id, code: typed.trim() });
+      flash("組織「" + g.name + "」を削除しました（チーム " + r.teams + " 件・ノート " + r.notes + " 件）");
+      showOwnerHome();
+    } catch (err) { showErr(err.message); }
+    return;
+  }
   if (t.dataset.oteam) {
     setSel(SEL.org, t.dataset.oteam);
     try { localStorage.removeItem(WHO_KEY); } catch (err) {}
