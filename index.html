@@ -685,8 +685,8 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
     </div>
 
     <!-- 目標の項目（指導者・組織の管理者・オーナー） -->
-    <div class="panel staffOnly" id="goalEdit" hidden>
-      <h3>目標の項目 <span class="label-sm">チームに合わせて、項目を外したり足したりできます</span></h3>
+    <div class="panel" id="goalEdit" hidden>
+      <h3>目標の項目 <span class="label-sm">チームの指導者が、チームに合わせて項目を外したり足したりできます</span></h3>
       <div id="ge-list"></div>
       <div class="sub">項目を足す</div>
       <div class="fields">
@@ -1044,7 +1044,7 @@ function outsTxt(o) {
    ══════════════════════════════════════════ */
 const DEMO = !API_URL;
 /* この画面が必要とするサーバー（Code.gs）の版。Code.gs の VERSION と合わせます */
-const NEED_SERVER = "server v10";
+const NEED_SERVER = "server v11";
 function checkServer(v) {
   const old = !!v && v !== NEED_SERVER;
   $("#srvWarn").hidden = !old;
@@ -1980,7 +1980,7 @@ function renderTargets() {
 let GE = null;
 let GE_DIRTY = false;
 function renderGoalEdit() {
-  if (!canManage()) return;
+  if (ROLE !== "staff") return;
   if (!GE || !GE_DIRTY) GE = JSON.parse(JSON.stringify(TEAM_GOALS || { hide: [], add: [] }));
   GE.hide = GE.hide || []; GE.add = GE.add || [];
   const base = PROFILE.groups;
@@ -2148,6 +2148,8 @@ function renderAll() {
   $$(".po").forEach((e) => (e.hidden = staff));
   $$(".so").forEach((e) => (e.hidden = !staff));
   $$(".staffOnly").forEach((e) => (e.hidden = !canManage()));
+  /* 目標の項目を変えられるのは、そのチームの指導者だけ */
+  $("#goalEdit").hidden = ROLE !== "staff";
   renderMy(); renderInput(); renderGames(); renderTeam(); renderTargets(); renderPersonal(); renderStaffPersonal();
 }
 
