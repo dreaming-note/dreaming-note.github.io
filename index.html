@@ -119,6 +119,10 @@ table.t tbody tr:hover{background:#F8FAFD}
 .ldot{display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--lc,#1E5BC6);margin-right:6px;vertical-align:0}
 .irow select.iw{border-left:6px solid var(--lc,var(--line))}
 .mrow select{width:auto}
+table.perm td,table.perm th{text-align:center;white-space:normal;font-size:12px}
+table.perm th{min-width:4.5em}
+table.perm td.l,table.perm th.l{text-align:left}
+table.perm input{width:20px;height:20px;accent-color:var(--accent);cursor:pointer}
 .ge-row{display:flex;align-items:center;gap:10px;padding:6px 0;border-bottom:1px dashed var(--line);font-size:14px}
 .ge-row label{display:inline-flex;align-items:center;gap:6px;cursor:pointer}
 .ge-row input{width:18px;height:18px;margin:0;accent-color:var(--accent)}
@@ -349,6 +353,12 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <div id="orgInq"></div>
     </div>
     <div class="panel">
+      <h3>権限の設定 <span class="label-sm">この組織のすべてのチームで、だれが何をできるか</span></h3>
+      <div class="tscroll"><table class="t perm" id="permTable" style="min-width:0"></table></div>
+      <p class="note" style="margin-top:8px">チェックした人だけができます。チェックを外した人には、その操作の欄が出なくなります（見ることはできます）。</p>
+      <div class="actions"><span class="spacer"></span><button class="btn" id="savePermsBtn">権限を保存</button></div>
+    </div>
+    <div class="panel">
       <h3>組織の設定</h3>
       <div class="fields">
         <label class="f" for="os-name">組織名<input id="os-name" type="text"></label>
@@ -421,6 +431,24 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <p class="note">指導者はノートを書く必要はありません。部員を選ぶと、その部員としてノートを書けます。</p>
     </div>
 
+    <!-- ラベル管理（だれが使えるかは、組織の「権限の設定」で決めます） -->
+    <div class="panel" id="labelPanel">
+    <details id="n-menuAdd" class="menu-add">
+      <summary>ラベル管理</summary>
+      <!-- 保存したラベル。名前・単位・色を直したり、消したりできます -->
+      <div id="lm-list"></div>
+      <div class="sub">ラベルを作る</div>
+      <div class="fields" style="margin-top:6px">
+        <label class="f" for="nm-name">練習メニューの名前<input id="nm-name" type="text" list="menuList" placeholder="例：ロングティー"></label>
+        <label class="f" for="nm-unit">量の単位（任意）<input id="nm-unit" type="text" maxlength="6" placeholder="例：本・球・分・km"></label>
+        <button type="button" class="btn small" id="nm-save">ラベルを保存</button>
+      </div>
+      <div class="f" style="margin-top:8px">色</div>
+      <div class="swatches" id="nm-colors" role="radiogroup" aria-label="ラベルの色"></div>
+      <p class="note" style="margin-top:6px">ラベルはチームのみんなで使えます。名前を直すと、これまでのノートのその練習の名前も変わります。消しても、これまでのノートの練習内容は残ります。</p>
+    </details>
+    </div>
+
     <div class="po">
       <div class="panel" id="noteForm">
         <h3>ノートを書く <span class="label-sm" id="inputWho"></span>
@@ -453,20 +481,6 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
           <div class="sub">練習内容</div>
           <!-- チームで保存した練習メニューのラベル。押すと行が増え、量を入れるだけになります -->
           <div class="menu-chips" id="n-menus"></div>
-          <details id="n-menuAdd" class="menu-add">
-            <summary>ラベル管理</summary>
-            <!-- 保存したラベル。名前・単位・色を直したり、消したりできます -->
-            <div id="lm-list"></div>
-            <div class="sub">ラベルを作る</div>
-            <div class="fields" style="margin-top:6px">
-              <label class="f" for="nm-name">練習メニューの名前<input id="nm-name" type="text" list="menuList" placeholder="例：ロングティー"></label>
-              <label class="f" for="nm-unit">量の単位（任意）<input id="nm-unit" type="text" maxlength="6" placeholder="例：本・球・分・km"></label>
-              <button type="button" class="btn small" id="nm-save">ラベルを保存</button>
-            </div>
-            <div class="f" style="margin-top:8px">色</div>
-            <div class="swatches" id="nm-colors" role="radiogroup" aria-label="ラベルの色"></div>
-            <p class="note" style="margin-top:6px">ラベルはチームのみんなで使えます。名前を直すと、これまでのノートのその練習の名前も変わります。消しても、これまでのノートの練習内容は残ります。</p>
-          </details>
           <div class="irow ihead"><span>練習内容</span><span>量</span><span>備考</span><span></span></div>
           <div id="n-items"></div>
           <datalist id="menuList"></datalist>
@@ -1044,7 +1058,7 @@ function outsTxt(o) {
    ══════════════════════════════════════════ */
 const DEMO = !API_URL;
 /* この画面が必要とするサーバー（Code.gs）の版。Code.gs の VERSION と合わせます */
-const NEED_SERVER = "server v11";
+const NEED_SERVER = "server v12";
 function checkServer(v) {
   const old = !!v && v !== NEED_SERVER;
   $("#srvWarn").hidden = !old;
@@ -1119,6 +1133,8 @@ let ROLE = "";
 let TEAM = { id: "", name: "", code: "", orgName: "" };
 /* チームの練習メニューのラベル [{ n: 名前, u: 単位 }] */
 let TEAM_MENUS = [];
+/* ログインしている人ができること（組織の「権限の設定」から）。{ goals, targets, labels } */
+let CAN = {};
 /* ラベルの色20色（Code.gs の MENU_COLORS と同じ並び）。白い文字が読める濃さにしています */
 const LABEL_COLORS = [
   { k: "red", nm: "レッド", v: "#D32F2F" }, { k: "coral", nm: "コーラル", v: "#D84315" },
@@ -1495,7 +1511,7 @@ function renderMenus() {
   $("#n-menus").innerHTML = TEAM_MENUS.length
     ? TEAM_MENUS.map((m, i) => '<button type="button" data-menu="' + i + '" style="--lc:' + colorOf(m.c) + '">' + esc(m.n) +
         (m.u ? "<small>" + esc(m.u) + "</small>" : "") + "</button>").join("")
-    : '<span class="note">練習メニューのラベルはまだありません。下の「＋ 練習メニューのラベルを作る」から作ってください。練習内容はラベルから選びます。</span>';
+    : '<span class="note">練習メニューのラベルはまだありません。上の「ラベル管理」から作ってください（作れる人は組織の設定で決まっています）。練習内容はラベルから選びます。</span>';
   /* 書きかけの行の選択肢も、いまのラベルに合わせます（選んでいたものはそのまま） */
   $$("#n-items .irow").forEach((r) => {
     const sel = r.querySelector(".iw");
@@ -1542,6 +1558,7 @@ function renderLabelMgr() {
         '<button type="button" class="btn small" data-lmsave>保存</button>' +
         '<button type="button" class="btn danger small" data-lmdel>削除</button></div>').join("")
     : "";
+  if (!CAN.labels) { $("#lm-list").innerHTML = ""; return; }
   /* ラベルがまだないときは、最初から開いておきます */
   if (!TEAM_MENUS.length) $("#n-menuAdd").open = true;
 }
@@ -1598,8 +1615,9 @@ function loadNote(date) {
 }
 
 function renderInput() {
-  if (isStaff(ME) || !ME) return;
+  /* ラベル管理は、指導者として見ているときも使えます */
   renderMenus();
+  if (isStaff(ME) || !ME) return;
   $("#inputWho").textContent = ME + " として書きます";
   const ym = $("#histMonth").value || THIS_MONTH;
   const rows = LOGS.filter((l) => l.name === ME && inPer(l.date, ym))
@@ -1974,13 +1992,15 @@ function renderTargets() {
   $("#tgtTable").innerHTML = h + "</tbody>";
   renderGoalEdit();
   $$("#tgtTable tr[data-trow]").forEach(updateTargetRates);
+  /* 目標を入れられない人には、入力欄を使えないようにします */
+  if (!CAN.targets) $$("#tgtTable input").forEach((i) => (i.disabled = true));
 }
 /* ── 目標の項目の編集（指導者・組織の管理者・オーナー） ──
    GE は保存するまでの書きかけ。保存すると、チームのみんなの画面がこの項目になります */
 let GE = null;
 let GE_DIRTY = false;
 function renderGoalEdit() {
-  if (ROLE !== "staff") return;
+  if (!CAN.goals) return;
   if (!GE || !GE_DIRTY) GE = JSON.parse(JSON.stringify(TEAM_GOALS || { hide: [], add: [] }));
   GE.hide = GE.hide || []; GE.add = GE.add || [];
   const base = PROFILE.groups;
@@ -2149,7 +2169,10 @@ function renderAll() {
   $$(".so").forEach((e) => (e.hidden = !staff));
   $$(".staffOnly").forEach((e) => (e.hidden = !canManage()));
   /* 目標の項目を変えられるのは、そのチームの指導者だけ */
-  $("#goalEdit").hidden = ROLE !== "staff";
+  $("#goalEdit").hidden = !CAN.goals;
+  /* ラベル管理と、目標の数字の入力も、権限の設定にしたがいます */
+  $("#labelPanel").hidden = !CAN.labels;
+  $("#saveTargets").hidden = !CAN.targets;
   renderMy(); renderInput(); renderGames(); renderTeam(); renderTargets(); renderPersonal(); renderStaffPersonal();
 }
 
@@ -2607,6 +2630,7 @@ async function showOrgHome() {
     $("#teamList").innerHTML = teamRows(d.teams);
     fillSports(d.sports || [], d.teams);
     $("#orgInq").innerHTML = inqHtml(d.inquiries, false);
+    renderPerms(d.perms || {}, d.permNames || {});
     $("#os-name").value = d.org.name;
     $("#os-code").value = d.org.code;
     $("#os-admin").value = d.org.adminName || "";
@@ -2713,6 +2737,27 @@ $("#createTeamBtn").addEventListener("click", async () => {
     ["#nt-name", "#nt-pass", "#nt-spass", "#nt-members"].forEach((s) => ($(s).value = ""));
     AUTO_NAME = "";
     showOrgHome();
+  } catch (e) { showErr(e.message); }
+});
+/* ── 権限の設定（組織の管理者・オーナー） ── */
+const PERM_COLS = [["staff", "指導者"], ["admin", "組織の管理者<br>・オーナー"], ["member", "部員"]];
+function renderPerms(perms, names) {
+  $("#permTable").innerHTML = '<thead><tr><th class="l">できること</th>' + PERM_COLS.map((c) => "<th>" + c[1] + "</th>").join("") + "</tr></thead><tbody>" +
+    Object.keys(names).map((k) => '<tr><td class="l"><b>' + esc(names[k]) + "</b></td>" +
+      PERM_COLS.map((c) => '<td><input type="checkbox" data-perm="' + k + "|" + c[0] + '"' + (perms[k] && perms[k][c[0]] ? " checked" : "") +
+        ' aria-label="' + esc(names[k] + "：" + c[1].replace("<br>", "")) + '"></td>').join("") + "</tr>").join("") + "</tbody>";
+}
+$("#savePermsBtn").addEventListener("click", async () => {
+  const perms = {};
+  $$("#permTable [data-perm]").forEach((i) => {
+    const [k, w] = i.dataset.perm.split("|");
+    perms[k] = perms[k] || {};
+    perms[k][w] = i.checked;
+  });
+  try {
+    const r = await api("savePerms", { perms });
+    flash("権限を保存しました");
+    renderPerms(r.perms, Object.fromEntries($$("#permTable tbody tr").map((tr) => [tr.querySelector("[data-perm]").dataset.perm.split("|")[0], tr.querySelector("b").textContent])));
   } catch (e) { showErr(e.message); }
 });
 $("#saveOrgBtn").addEventListener("click", async () => {
@@ -2844,6 +2889,7 @@ function apply(d) {
   GAMES = LOGS.filter((l) => l.kind === "試合");
   TARGETS = (d && d.targets) || {};
   TEAM_MENUS = (d && d.menus) || [];
+  CAN = (d && d.can) || {};
   $("#teamTxt").textContent = [TEAM.orgName, TEAM.name].filter(Boolean).join(" ");
 }
 /* 指導者の名前は、指導者・組織の管理者・オーナーとしてログインしたときだけ選べます */
