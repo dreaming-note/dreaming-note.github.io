@@ -205,8 +205,8 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
   <div id="gate" hidden>
     <div class="panel login" id="loginBox">
       <h2 class="login-title">Dreaming</h2>
-      <label class="f" for="g-org">組織コード<input id="g-org" type="text" autocomplete="organization" autocapitalize="off" spellcheck="false"></label>
-      <label class="f" for="g-code" style="margin-top:10px">チームコード<input id="g-code" type="text" autocomplete="username" autocapitalize="off" spellcheck="false" placeholder="組織の管理者は空欄"></label>
+      <label class="f" for="g-org">組織コード<input id="g-org" type="text" autocomplete="organization" autocapitalize="characters" spellcheck="false" maxlength="7" pattern="[A-Za-z0-9]{7}" style="text-transform:uppercase" placeholder="英数字7文字"></label>
+      <label class="f" for="g-code" style="margin-top:10px">チームコード<input id="g-code" type="text" autocomplete="username" autocapitalize="characters" spellcheck="false" maxlength="7" pattern="[A-Za-z0-9]{7}" style="text-transform:uppercase" placeholder="英数字7文字（組織の管理者は空欄）"></label>
       <label class="f" for="g-pass" style="margin-top:10px">パスワード<input id="g-pass" type="password" autocomplete="current-password"></label>
       <div class="login-links">
         <button type="button" class="linkbtn" id="toSignup">新規登録</button>
@@ -224,7 +224,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
         組織の中で部活動などのチームを自由に作れます。承認の連絡は、ご入力の連絡先にお送りします。
       </p>
       <label class="f" for="su-org">組織名<input id="su-org" type="text" placeholder="例：桜高校"></label>
-      <label class="f" for="su-code" style="margin-top:10px">希望する組織コード<input id="su-code" type="text" autocapitalize="off" spellcheck="false" placeholder="英数字4〜20文字（例：sakura-hs）"></label>
+      <label class="f" for="su-code" style="margin-top:10px">希望する組織コード<input id="su-code" type="text" autocapitalize="characters" spellcheck="false" maxlength="7" pattern="[A-Za-z0-9]{7}" style="text-transform:uppercase" placeholder="英数字7文字（例：SAKURA1）"></label>
       <label class="f" for="su-name" style="margin-top:10px">管理者のお名前<input id="su-name" type="text"></label>
       <label class="f" for="su-contact" style="margin-top:10px">連絡先（メールアドレスまたは電話番号）<input id="su-contact" type="text" autocomplete="email"></label>
       <label class="f" for="su-pass" style="margin-top:10px">管理者パスワード（4文字以上）<input id="su-pass" type="password" autocomplete="new-password"></label>
@@ -273,10 +273,19 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <div class="tscroll"><table class="t" id="orgList"></table></div>
     </div>
     <div class="panel">
+      <h3>競技（チームの種類） <span class="label-sm">チームコードの下3文字になります</span></h3>
+      <div class="tscroll"><table class="t" id="sportList" style="min-width:0"></table></div>
+      <div class="fields" style="margin-top:10px">
+        <label class="f" for="ns-name">追加する競技の名前<input id="ns-name" type="text" placeholder="例：テニス"></label>
+        <button class="btn" id="addSportBtn">競技を追加</button>
+      </div>
+      <p class="note" style="margin-top:8px">競技コードは S06、S07…と順に自動で付きます。</p>
+    </div>
+    <div class="panel">
       <h3>組織を作る <span class="label-sm">申し込みを通さずに、運営が直接作るとき</span></h3>
       <div class="fields">
         <label class="f" for="no-name">組織名<input id="no-name" type="text" placeholder="例：桜高校"></label>
-        <label class="f" for="no-code">組織コード<input id="no-code" type="text" autocapitalize="off" placeholder="英数字4〜20文字"></label>
+        <label class="f" for="no-code">組織コード<input id="no-code" type="text" autocapitalize="characters" maxlength="7" pattern="[A-Za-z0-9]{7}" style="text-transform:uppercase" placeholder="英数字7文字"></label>
         <label class="f" for="no-admin">管理者のお名前<input id="no-admin" type="text"></label>
         <label class="f" for="no-contact">連絡先<input id="no-contact" type="text"></label>
         <label class="f" for="no-pass">管理者パスワード<input id="no-pass" type="text" autocomplete="off" placeholder="4文字以上"></label>
@@ -294,8 +303,9 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
     <div class="panel">
       <h3>チームを作る</h3>
       <div class="fields">
+        <label class="f" for="nt-sport">競技<select id="nt-sport"></select></label>
+        <label class="f" for="nt-codeview">チームコード（自動）<input id="nt-codeview" type="text" readonly tabindex="-1" style="background:#F6F8FB;font-weight:700;letter-spacing:.05em" placeholder="競技を選ぶと出ます"></label>
         <label class="f" for="nt-name">チーム名<input id="nt-name" type="text" placeholder="例：野球部"></label>
-        <label class="f" for="nt-code">チームコード<input id="nt-code" type="text" placeholder="英数字2〜20文字（例：baseball）" autocapitalize="off"></label>
         <label class="f" for="nt-pass">チームのパスワード<input id="nt-pass" type="text" autocomplete="off" placeholder="部員用・4文字以上"></label>
         <label class="f" for="nt-spass">指導者用パスワード<input id="nt-spass" type="text" autocomplete="off" placeholder="4文字以上"></label>
       </div>
@@ -313,12 +323,12 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <h3>組織の設定</h3>
       <div class="fields">
         <label class="f" for="os-name">組織名<input id="os-name" type="text"></label>
-        <label class="f" for="os-code">組織コード（ログイン用）<input id="os-code" type="text" autocapitalize="off" spellcheck="false"></label>
+        <label class="f" for="os-code">組織コード（ログイン用）<input id="os-code" type="text" autocapitalize="characters" spellcheck="false" maxlength="7" pattern="[A-Za-z0-9]{7}" style="text-transform:uppercase"></label>
         <label class="f" for="os-admin">管理者のお名前<input id="os-admin" type="text"></label>
         <label class="f" for="os-contact">連絡先<input id="os-contact" type="text"></label>
         <label class="f" for="os-pass">新しい管理者パスワード<input id="os-pass" type="text" autocomplete="off" placeholder="変えるときだけ入れる"></label>
       </div>
-      <p class="note" style="margin-top:8px">組織コードを変えると、組織の全員が新しい組織コードでログインすることになります。</p>
+      <p class="note" style="margin-top:8px">組織コード（英数字7文字）を変えると、各チームのチームコードの上4文字も変わり、組織の全員が新しいコードでログインすることになります。</p>
       <div class="actions"><span class="spacer"></span><button class="btn" id="saveOrgBtn">組織の設定を保存</button></div>
     </div>
   </div>
@@ -637,7 +647,7 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <h3>チームの設定 <span class="label-sm">指導者とオーナーだけが使えます</span></h3>
       <div class="fields">
         <label class="f" for="st-name">チーム名<input id="st-name" type="text"></label>
-        <label class="f" for="st-code">チームコード（ログイン用）<input id="st-code" type="text" autocapitalize="off" spellcheck="false"></label>
+        <label class="f" for="st-code">チームコード（ログイン用・変更できません）<input id="st-code" type="text" readonly tabindex="-1" style="background:#F6F8FB;font-weight:700;letter-spacing:.05em"></label>
       </div>
       <div class="fields" style="margin-top:10px">
         <label class="f" for="st-pass">新しいチームのパスワード<input id="st-pass" type="text" autocomplete="off" placeholder="変えるときだけ入れる"></label>
@@ -1824,7 +1834,7 @@ async function loadSettings() {
   try {
     const s = await api("getSettings");
     $("#st-name").value = s.name;
-    $("#st-code").value = s.code;
+    $("#st-code").value = s.code + (s.sport ? "（" + s.sport + "）" : "");
     $("#st-pass").value = ""; $("#st-spass").value = "";
     $("#st-members").innerHTML = s.members.map((n) => nameRow(n, n)).join("");
     $("#st-staff").innerHTML = s.staff.map((n) => nameRow(n, n)).join("");
@@ -1992,6 +2002,8 @@ async function showOwnerHome() {
           '<button class="btn small" data-approve="' + esc(r.id) + '">承認する</button></div></div>').join("")
       : '<p class="note">新しい申し込みはありません。</p>';
     $("#ownerInq").innerHTML = inqHtml(d.inquiries, true);
+    $("#sportList").innerHTML = "<thead><tr><th class=\"l\">競技コード</th><th class=\"l\">競技</th></tr></thead><tbody>" +
+      d.sports.map((x) => "<tr><td class=\"l\"><b>" + esc(x.code) + "</b></td><td class=\"l\">" + esc(x.name) + "</td></tr>").join("") + "</tbody>";
     let h = '<thead><tr><th class="l">組織</th><th class="l">組織コード</th><th class="l">管理者</th><th>チーム</th><th class="l">チーム名</th><th></th></tr></thead><tbody>';
     if (!d.orgs.length) h += '<tr><td class="l" colspan="6"><span class="note">まだ組織がありません。</span></td></tr>';
     d.orgs.forEach((g) => {
@@ -2008,14 +2020,35 @@ async function showOwnerHome() {
 
 /* ── 組織の画面：チーム一覧・チームを作る・問い合わせ・組織の設定 ── */
 let ORG_NAME = "";
+let ORG_CODE = "";
+/* チームを作るとき、競技を選ぶとチームコード（組織コードの上4文字 ＋ 競技コード）を出します */
+function fillSports(sports, teams) {
+  const used = teams.map((t) => t.sport);
+  $("#nt-sport").innerHTML = "<option value=\"\">選んでください</option>" + sports.map((x) =>
+    "<option value=\"" + esc(x.code) + "\" data-name=\"" + esc(x.name) + "\"" + (used.indexOf(x.code) >= 0 ? " disabled" : "") + ">" +
+    esc(x.code + "　" + x.name) + (used.indexOf(x.code) >= 0 ? "（作成済み）" : "") + "</option>").join("");
+  showTeamCode();
+}
+let AUTO_NAME = "";
+function showTeamCode() {
+  const opt = $("#nt-sport").selectedOptions[0];
+  const sp = $("#nt-sport").value;
+  $("#nt-codeview").value = sp ? ORG_CODE.slice(0, 4).toUpperCase() + sp : "";
+  /* チーム名が空か、前に自動で入れた名前のままなら「○○部」を入れます */
+  const nm = $("#nt-name");
+  if (sp && (!nm.value || nm.value === AUTO_NAME)) { AUTO_NAME = opt.dataset.name + "部"; nm.value = AUTO_NAME; }
+}
+$("#nt-sport").addEventListener("change", showTeamCode);
 async function showOrgHome() {
   setSel(SEL.org, "");
   try {
     const d = await api("orgHome");
     ORG_NAME = d.org.name;
+    ORG_CODE = d.org.code;
     showScreen("org");
     $("#oh-title").textContent = d.org.name;
     $("#teamList").innerHTML = teamRows(d.teams);
+    fillSports(d.sports || [], d.teams);
     $("#orgInq").innerHTML = inqHtml(d.inquiries, false);
     $("#os-name").value = d.org.name;
     $("#os-code").value = d.org.code;
@@ -2115,12 +2148,13 @@ $("#createTeamBtn").addEventListener("click", async () => {
   const lines = (sel) => $(sel).value.split("\n").map((s) => s.trim()).filter(Boolean);
   try {
     await api("createTeam", {
-      name: $("#nt-name").value.trim(), code: $("#nt-code").value.trim(),
+      name: $("#nt-name").value.trim(), sport: $("#nt-sport").value,
       password: $("#nt-pass").value, staffPassword: $("#nt-spass").value,
       members: lines("#nt-members"), staff: lines("#nt-staff")
     });
     flash("チーム「" + $("#nt-name").value.trim() + "」を作りました");
-    ["#nt-name", "#nt-code", "#nt-pass", "#nt-spass", "#nt-members"].forEach((s) => ($(s).value = ""));
+    ["#nt-name", "#nt-pass", "#nt-spass", "#nt-members"].forEach((s) => ($(s).value = ""));
+    AUTO_NAME = "";
     showOrgHome();
   } catch (e) { showErr(e.message); }
 });
@@ -2134,6 +2168,18 @@ $("#saveOrgBtn").addEventListener("click", async () => {
     setToken(r.token);
     flash("組織の設定を保存しました");
     showOrgHome();
+  } catch (e) { showErr(e.message); }
+});
+/* 競技の追加（オーナー） */
+$("#addSportBtn").addEventListener("click", async () => {
+  const name = $("#ns-name").value.trim();
+  if (!name) { showErr("競技名を入れてください"); return; }
+  if (!confirm("競技「" + name + "」を追加します。追加した競技はあとから消せません。よろしいですか？")) return;
+  try {
+    const r = await api("addSport", { name });
+    $("#ns-name").value = "";
+    flash("競技「" + name + "」を追加しました（競技コード " + r.code + "）");
+    showOwnerHome();
   } catch (e) { showErr(e.message); }
 });
 $("#createOrgBtn").addEventListener("click", async () => {
@@ -2260,8 +2306,8 @@ async function boot() {
   if (DEMO) {
     $("#demo").hidden = false;
     $("#demo").innerHTML = "<b>お試しモードです。</b>入力はこの端末のブラウザにだけ保存されます。" +
-      "部員：組織 <code>demo</code>・チーム <code>baseball</code>・パスワード <code>1234</code>（指導者は <code>5678</code>）。" +
-      "組織の管理者：組織 <code>demo</code>・チーム空欄・<code>admin1234</code>。" +
+      "部員：組織 <code>DEMO001</code>・チーム <code>DEMOS01</code>・パスワード <code>1234</code>（指導者は <code>5678</code>）。" +
+      "組織の管理者：組織 <code>DEMO001</code>・チーム空欄・<code>admin1234</code>。" +
       "オーナー：組織 <code>owner</code>・チーム空欄・<code>owner1234</code>。";
   }
   setMode(DEMO ? "demo" : "ok", DEMO ? "お試しモード" : "接続中");
