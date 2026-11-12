@@ -276,10 +276,11 @@ dl.help dd{margin:2px 0 0;color:var(--ink)}
       <h3>競技（チームの種類） <span class="label-sm">チームコードの下3文字になります</span></h3>
       <div class="tscroll"><table class="t" id="sportList" style="min-width:0"></table></div>
       <div class="fields" style="margin-top:10px">
-        <label class="f" for="ns-name">追加する競技の名前<input id="ns-name" type="text" placeholder="例：テニス"></label>
+        <label class="f" for="ns-name">競技の名前<input id="ns-name" type="text" placeholder="例：テニス"></label>
+        <label class="f" for="ns-code">競技コード（英数字3文字）<input id="ns-code" type="text" maxlength="3" autocapitalize="characters" spellcheck="false" style="text-transform:uppercase" placeholder="例：S06"></label>
         <button class="btn" id="addSportBtn">競技を追加</button>
       </div>
-      <p class="note" style="margin-top:8px">競技コードは S06、S07…と順に自動で付きます。</p>
+      <p class="note" style="margin-top:8px">競技コードは、ほかの競技と重ならない英数字3文字にしてください。チームコードの下3文字になります。</p>
     </div>
     <div class="panel">
       <h3>組織を作る <span class="label-sm">申し込みを通さずに、運営が直接作るとき</span></h3>
@@ -2002,6 +2003,9 @@ async function showOwnerHome() {
           '<button class="btn small" data-approve="' + esc(r.id) + '">承認する</button></div></div>').join("")
       : '<p class="note">新しい申し込みはありません。</p>';
     $("#ownerInq").innerHTML = inqHtml(d.inquiries, true);
+    /* 次に使えそうな競技コードを、入力欄の例として出します */
+    const nums = d.sports.map((x) => /^S(\d+)$/.exec(x.code)).filter(Boolean).map((m) => Number(m[1]));
+    $("#ns-code").placeholder = "例：S" + String((nums.length ? Math.max.apply(null, nums) : 0) + 1).padStart(2, "0");
     $("#sportList").innerHTML = "<thead><tr><th class=\"l\">競技コード</th><th class=\"l\">競技</th></tr></thead><tbody>" +
       d.sports.map((x) => "<tr><td class=\"l\"><b>" + esc(x.code) + "</b></td><td class=\"l\">" + esc(x.name) + "</td></tr>").join("") + "</tbody>";
     let h = '<thead><tr><th class="l">組織</th><th class="l">組織コード</th><th class="l">管理者</th><th>チーム</th><th class="l">チーム名</th><th></th></tr></thead><tbody>';
@@ -2173,11 +2177,13 @@ $("#saveOrgBtn").addEventListener("click", async () => {
 /* 競技の追加（オーナー） */
 $("#addSportBtn").addEventListener("click", async () => {
   const name = $("#ns-name").value.trim();
+  const code = $("#ns-code").value.trim().toUpperCase();
   if (!name) { showErr("競技名を入れてください"); return; }
-  if (!confirm("競技「" + name + "」を追加します。追加した競技はあとから消せません。よろしいですか？")) return;
+  if (!/^[A-Z0-9]{3}$/.test(code)) { showErr("競技コードは英数字3文字にしてください（例：S06）"); return; }
+  if (!confirm("競技「" + name + "」（競技コード " + code + "）を追加します。追加した競技はあとから消せません。よろしいですか？")) return;
   try {
-    const r = await api("addSport", { name });
-    $("#ns-name").value = "";
+    const r = await api("addSport", { name, code });
+    $("#ns-name").value = ""; $("#ns-code").value = "";
     flash("競技「" + name + "」を追加しました（競技コード " + r.code + "）");
     showOwnerHome();
   } catch (e) { showErr(e.message); }
